@@ -1,0 +1,10 @@
+net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
+net.minecraft.client.gui.GuiGraphics
+net.minecraft.client.Options
+net.minecraft.client.gui.screens.Screen
+net.minecraft.client.gui.components.Button
+net.minecraft.client.gui.components.Button$Builder
+net.minecraft.client.gui.screens.ChatScreen
+net.minecraft.client.multiplayer.ClientPacketListener
+net.minecraft.world.level.block.ColorCollection
+net.minecraft.world.item.component.ResolvableProfile

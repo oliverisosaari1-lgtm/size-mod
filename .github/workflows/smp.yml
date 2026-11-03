@@ -24,17 +24,9 @@ jobs:
       - name: Show Minecraft API (debug)
         if: failure()
         run: |
-          JAR=$(find ~/.gradle/caches ../smp-mod/.gradle -name 'minecraft-merged*.jar' -o -name 'minecraft-common*.jar' 2>/dev/null | grep -v sources | head -1)
-          [ -z "$JAR" ] && JAR=$(find ~/.gradle/caches -path '*minecraft*' -name '*.jar' -size +10M | head -1)
-          echo "jar: $JAR"
-          unzip -l "$JAR" | grep -E 'world/inventory/(Click|Container)[A-Za-z]*\.class' || true
-          javap -cp "$JAR" net.minecraft.world.inventory.AbstractContainerMenu | grep -iE 'clicked|click' || true
-          javap -cp "$JAR" net.minecraft.util.Prediction || true
-          javap -cp "$JAR" net.minecraft.world.entity.player.Inventory | grep -iE "placeItemBack|add\(" || true
-          javap -cp "$JAR" net.minecraft.world.item.Items | grep -E 'GLASS_PANE|_DYE' | head -8 || true
-          javap -cp "$JAR" net.minecraft.world.entity.player.Player | grep -E ' drop' || true
-          javap -cp "$JAR" net.minecraft.world.entity.LivingEntity | grep -E ' drop' || true
-          javap -cp "$JAR" net.minecraft.server.level.ServerPlayer | grep -E ' drop|teleportTo|sendSystemMessage' || true
+          JAR=$(find ~/.gradle/caches -name 'minecraft-merged*.jar' | grep -v sources | head -1)
+          CP="$JAR:$(find ~/.gradle/caches -name 'fabric-*.jar' | grep -v sources | tr '\n' ':')"
+          for c in $(cat debug-classes.txt 2>/dev/null); do echo "=== $c"; javap -cp "$CP" "$c" || true; done
       - name: Publish release
         if: github.ref == 'refs/heads/main'
         env:
