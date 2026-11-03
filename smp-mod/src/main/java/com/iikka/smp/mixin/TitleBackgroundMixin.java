@@ -15,7 +15,7 @@ public abstract class TitleBackgroundMixin {
     private static final Identifier BACKGROUND = Identifier.fromNamespaceAndPath("donutsmp", "textures/gui/title_background.png");
     private static final float IMAGE_RATIO = 1920f / 1080f;
 
-    @Inject(method = "extractPanorama", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractPanorama", at = @At("HEAD"), cancellable = true, require = 0)
     private void donutsmp$titleBackground(GuiGraphicsExtractor graphics, float delta, CallbackInfo ci) {
         if (!((Object) this instanceof TitleScreen)) return;
         int w = graphics.guiWidth(), h = graphics.guiHeight();
