@@ -28,7 +28,8 @@ jobs:
           CP="$JAR:$(find ~/.gradle/caches -name 'fabric-*.jar' | grep -v sources | tr '\n' ':')"
           unzip -l "$JAR" | grep -iE 'client/gui/[A-Za-z]*Graphics|client/gui/Gui[A-Z][A-Za-z]*\.class' | head -20
           javap -cp "$CP" net.minecraft.client.Options | grep -iE 'boolean hide' || true
-          find ~/.gradle/caches -name 'fabric-key*' -name '*.jar' | head -3
+          unzip -l "$JAR" | grep -iE 'fov|Fov' | head
+          for c in net.minecraft.client.Camera net.minecraft.client.renderer.GameRenderer net.minecraft.client.renderer.LevelRenderer; do javap -p -cp "$CP" $c | grep -iE 'fov' ; done
           for j in $(find ~/.gradle/caches -name 'fabric-key*.jar' | grep -v sources | head -1); do unzip -l $j | grep class; done
           curl -s 'https://api.modrinth.com/v2/project/simple-voice-chat/version?loaders=%5B%22fabric%22%5D' | jq -r '.[0:5][]|.version_number+" "+(.game_versions|join(","))+" "+([.files[]|select(.primary)][0].filename)'
           for c in $(cat debug-classes.txt 2>/dev/null); do echo "=== $c"; javap -cp "$CP" "$c" || true; done
