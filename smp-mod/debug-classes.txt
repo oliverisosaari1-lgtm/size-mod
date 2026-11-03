@@ -1,1 +1,1 @@
-net.minecraft.client.Minecraft
+net.minecraft.client.gui.Gui
