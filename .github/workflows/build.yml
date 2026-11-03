@@ -36,4 +36,6 @@ jobs:
         run: |
           JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
           gh release delete latest -y --cleanup-tag || true
-          gh release create latest "$JAR" --title "Size Mod for Minecraft 1.21.11" --notes "Download the .jar and put it in your mods folder. Needs Fabric API."
+          API_URL=$(curl -s 'https://api.modrinth.com/v2/project/fabric-api/version?game_versions=%5B%221.21.11%22%5D&loaders=%5B%22fabric%22%5D' | jq -r '.[0].files[] | select(.primary) | .url')
+          curl -sSL -o "$(basename "$API_URL")" "$API_URL"
+          gh release create latest "$JAR" "$(basename "$API_URL")" --title "Size Mod for Minecraft 1.21.11" --notes "Download both .jar files (size-mod and fabric-api) and add them to your Fabric 1.21.11 mods folder."
