@@ -29,7 +29,7 @@ jobs:
           echo "jar: $JAR"
           unzip -l "$JAR" | grep -E 'world/inventory/(Click|Container)[A-Za-z]*\.class' || true
           javap -cp "$JAR" net.minecraft.world.inventory.AbstractContainerMenu | grep -iE 'clicked|click' || true
-          javap -cp "$JAR" net.minecraft.world.inventory.ContainerInput || true
+          javap -cp "$JAR" net.minecraft.util.Prediction || true
           javap -cp "$JAR" net.minecraft.world.entity.player.Inventory | grep -iE "placeItemBack|add\(" || true
           javap -cp "$JAR" net.minecraft.world.item.Items | grep -E 'GLASS_PANE|_DYE' | head -8 || true
           javap -cp "$JAR" net.minecraft.world.entity.player.Player | grep -E ' drop' || true

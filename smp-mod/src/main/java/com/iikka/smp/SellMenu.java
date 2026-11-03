@@ -98,7 +98,7 @@ public class SellMenu extends ChestMenu {
         // Give back anything that wasn't sold
         for (int i = 0; i < ITEM_SLOTS; i++) {
             ItemStack s = box.removeItemNoUpdate(i);
-            if (!s.isEmpty()) player.getInventory().placeItemBackInInventory(s);
+            if (!s.isEmpty() && player instanceof net.minecraft.server.level.ServerPlayer sp) Gui.give(sp, s);
         }
         for (int i = ITEM_SLOTS; i < 54; i++) box.setItem(i, ItemStack.EMPTY);
     }

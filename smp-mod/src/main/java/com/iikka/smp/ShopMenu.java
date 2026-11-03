@@ -93,7 +93,7 @@ public class ShopMenu extends ChestMenu {
         }
         SmpMod.addMoney(player, -cost);
         ItemStack stack = new ItemStack(item, count);
-        player.getInventory().placeItemBackInInventory(stack);
+        Gui.give(player, stack);
         player.sendSystemMessage(Component.literal("Bought " + count + "x " + item.getName(new ItemStack(item)).getString()
             + " for " + Prices.money(cost)).withStyle(ChatFormatting.GREEN));
     }
