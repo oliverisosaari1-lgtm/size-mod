@@ -53,47 +53,9 @@ public class Listings {
         return stack;
     }
 
-    /** Someone clicked an item in Your Items and we're waiting for them to type a price in chat. */
-    record Pending(int slot, ItemStack item, long until) {}
-    private static final java.util.Map<UUID, Pending> pending = new java.util.HashMap<>();
-
-    public static void askPrice(ServerPlayer p, int invSlot) {
-        ItemStack stack = p.getInventory().getItem(invSlot);
-        if (stack.isEmpty()) return;
-        if (of(p).size() >= MAX_PER_PLAYER) { msg(p, "You can only have " + MAX_PER_PLAYER + " items listed", ChatFormatting.RED); return; }
-        pending.put(p.getUUID(), new Pending(invSlot, stack.copy(), System.currentTimeMillis() + 60_000));
-        p.closeContainer();
-        msg(p, "Type the price for " + stack.getCount() + "x " + stack.getHoverName().getString() + " in chat (like 500, 10k or 2m)", ChatFormatting.YELLOW);
-        msg(p, "Type cancel to stop", ChatFormatting.GRAY);
-    }
-
-    /** Called for every chat message. Returns true if it was a price we were waiting for (so it isn't shown in chat). */
-    public static boolean onChat(ServerPlayer p, String text) {
-        Pending pd = pending.get(p.getUUID());
-        if (pd == null) return false;
-        pending.remove(p.getUUID());
-        if (pd.until() < System.currentTimeMillis()) return false;
-        if (text.trim().equalsIgnoreCase("cancel")) { msg(p, "Cancelled", ChatFormatting.GRAY); return true; }
-        long price = Prices.parse(text);
-        if (price <= 0) { msg(p, "That's not a price. Click the item again to try again.", ChatFormatting.RED); return true; }
-        ItemStack now = p.getInventory().getItem(pd.slot());
-        if (!ItemStack.isSameItemSameComponents(now, pd.item()) || now.getCount() != pd.item().getCount()) {
-            msg(p, "That item moved! Click it again in Your Items.", ChatFormatting.RED);
-            return true;
-        }
-        p.getInventory().setItem(pd.slot(), ItemStack.EMPTY);
-        list(p, now, price);
-        return true;
-    }
-
     public static void list(ServerPlayer p, long price) {
         ItemStack hand = p.getMainHandItem();
         if (hand.isEmpty()) { msg(p, "Hold the item you want to sell in your hand", ChatFormatting.RED); return; }
-        p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        list(p, hand, price);
-    }
-
-    private static void list(ServerPlayer p, ItemStack hand, long price) {
         if (of(p).size() >= MAX_PER_PLAYER) { msg(p, "You can only have " + MAX_PER_PLAYER + " items listed", ChatFormatting.RED); return; }
         MinecraftServer server = SmpMod.server();
         Data.Listing l = new Data.Listing();
@@ -103,6 +65,7 @@ public class Listings {
         l.item = save(server, hand.copy());
         l.price = price;
         l.time = System.currentTimeMillis();
+        p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         SmpMod.DATA.listings.add(l);
         SmpMod.saveNow();
         msg(p, "Listed " + hand.getCount() + "x " + hand.getHoverName().getString() + " for " + Prices.money(price) + "!", ChatFormatting.GREEN);
