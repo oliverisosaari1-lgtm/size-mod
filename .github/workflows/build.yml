@@ -13,14 +13,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - name: Find latest Fabric versions for 1.21.11
-        run: |
-          MC=1.21.11
-          LOADER=$(curl -s https://meta.fabricmc.net/v2/versions/loader | jq -r '[.[]|select(.stable)][0].version')
-          API=$(curl -s https://api.modrinth.com/v2/project/fabric-api/version | jq -r --arg mc "$MC" '[.[]|select(.game_versions|index($mc))][0].version_number')
-          echo "loader=$LOADER api=$API"
-          sed -i "s/^loader_version=.*/loader_version=$LOADER/; s/^fabric_version=.*/fabric_version=$API/" gradle.properties
-          cat gradle.properties
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.2.0"
@@ -35,7 +27,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          API=$(grep '^fabric_version=' gradle.properties | cut -d= -f2)
+          API_JAR="fabric-api-$API.jar"
+          curl -sSfL -o "$API_JAR" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/$API_JAR"
           gh release delete latest -y --cleanup-tag || true
-          API_URL=$(curl -s 'https://api.modrinth.com/v2/project/fabric-api/version?game_versions=%5B%221.21.11%22%5D&loaders=%5B%22fabric%22%5D' | jq -r '.[0].files[] | select(.primary) | .url')
-          curl -sSL -o "$(basename "$API_URL")" "$API_URL"
-          gh release create latest "$JAR" "$(basename "$API_URL")" --title "Size Mod for Minecraft 1.21.11" --notes "Download both .jar files (size-mod and fabric-api) and add them to your Fabric 1.21.11 mods folder."
+          gh release create latest "$JAR" "$API_JAR" --title "Size Mod for Minecraft 1.21.11" --notes "Download both .jar files (size-mod and fabric-api) and add them to your Fabric 1.21.11 mods folder."
