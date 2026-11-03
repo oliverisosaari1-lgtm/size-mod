@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.iikka.sizemod.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["RangedAttributeMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

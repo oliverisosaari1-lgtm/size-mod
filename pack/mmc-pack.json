@@ -1,0 +1,8 @@
+{
+    "components": [
+        {"uid": "net.minecraft", "version": "1.21.11", "important": true},
+        {"uid": "net.fabricmc.intermediary", "version": "1.21.11", "dependencyOnly": true},
+        {"uid": "net.fabricmc.fabric-loader", "version": "0.20.1"}
+    ],
+    "formatVersion": 1
+}

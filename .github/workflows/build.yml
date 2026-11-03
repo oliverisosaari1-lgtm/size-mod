@@ -30,5 +30,9 @@ jobs:
           API=$(grep '^fabric_version=' gradle.properties | cut -d= -f2)
           API_JAR="fabric-api-$API.jar"
           curl -sSfL -o "$API_JAR" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/$API_JAR"
+          mkdir -p "zip/Size Mod 1.21.11/minecraft/mods"
+          cp pack/* "zip/Size Mod 1.21.11/"
+          cp "$JAR" "$API_JAR" "zip/Size Mod 1.21.11/minecraft/mods/"
+          (cd zip && zip -qr ../SizeMod-Prism-1.21.11.zip "Size Mod 1.21.11")
           gh release delete latest -y --cleanup-tag || true
-          gh release create latest "$JAR" "$API_JAR" --title "Size Mod for Minecraft 1.21.11" --notes "Download both .jar files (size-mod and fabric-api) and add them to your Fabric 1.21.11 mods folder."
+          gh release create latest SizeMod-Prism-1.21.11.zip "$JAR" "$API_JAR" --title "Size Mod for Minecraft 1.21.11" --notes "Easiest: download SizeMod-Prism-1.21.11.zip and import it in Prism (Add Instance, Import). Or download both .jar files (size-mod and fabric-api) and add them to your Fabric 1.21.11 mods folder."
