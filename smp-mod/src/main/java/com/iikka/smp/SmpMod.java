@@ -83,6 +83,22 @@ public class SmpMod implements ModInitializer {
         }
     }
 
+    /** Opens one of the mod's own screens on the player's game. Returns false if their game doesn't have the mod. */
+    public static boolean openScreen(ServerPlayer p, String screen, String data) {
+        if (!ServerPlayNetworking.canSend(p, ScreenPayload.TYPE)) return false;
+        ServerPlayNetworking.send(p, new ScreenPayload(screen, data));
+        return true;
+    }
+
+    public static final List<String> HOME_ICONS = List.of("white_bed", "red_bed", "blue_bed", "lime_bed", "yellow_bed",
+        "chest", "crafting_table", "furnace", "grass_block", "oak_sapling", "diamond", "emerald", "nether_star", "beacon");
+
+    private static void openHomes(ServerPlayer p) {
+        StringBuilder sb = new StringBuilder();
+        data(p).homes.forEach((name, h) -> sb.append(name).append('|').append(h.icon == null ? "white_bed" : h.icon).append('\n'));
+        openScreen(p, "homes", sb.toString());
+    }
+
     // ---------- helpers ----------
 
     private static void say(ServerPlayer p, String text, ChatFormatting color) {
@@ -124,7 +140,8 @@ public class SmpMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        PayloadTypeRegistry.playS2C().register(MoneyPayload.TYPE, MoneyPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MoneyPayload.TYPE, MoneyPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ScreenPayload.TYPE, ScreenPayload.CODEC);
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             server = s;
             dataFile = s.getWorldPath(LevelResource.ROOT).resolve("donutsmp_mod.json");
@@ -172,10 +189,73 @@ public class SmpMod implements ModInitializer {
     // ---------- commands (everyone can use them, no cheats needed) ----------
 
     private static void register(CommandDispatcher<CommandSourceStack> d) {
-        d.register(Commands.literal("ah").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p); return 1; }));
-        d.register(Commands.literal("shop").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p); return 1; }));
+        d.register(Commands.literal("ah")
+            .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p, null, false, 0, 0); return 1; })
+            .then(Commands.argument("search", StringArgumentType.greedyString()).executes(ctx -> {
+                ServerPlayer p = player(ctx);
+                if (p != null) ShopMenu.open(p, StringArgumentType.getString(ctx, "search"), false, 0, 0);
+                return 1;
+            })));
+        d.register(Commands.literal("shop").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p, null, false, 0, 0); return 1; }));
+        d.register(Commands.literal("quickbuy").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p, null, true, 0, 0); return 1; }));
+        d.register(Commands.literal("menu").executes(ctx -> {
+            ServerPlayer p = player(ctx);
+            if (p != null && !openScreen(p, "menu", "")) SettingsMenu.open(p);
+            return 1;
+        }));
+        d.register(Commands.literal("togglesettings").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) SettingsMenu.open(p); return 1; }));
+        for (String soon : List.of("orders", "rtpqueue", "friends", "shards")) {
+            d.register(Commands.literal(soon).executes(ctx -> {
+                ServerPlayer p = player(ctx);
+                if (p != null) say(p, "Coming soon!", ChatFormatting.YELLOW);
+                return 1;
+            }));
+        }
+        d.register(Commands.literal("stats").executes(ctx -> {
+            ServerPlayer p = player(ctx);
+            if (p == null) return 0;
+            Data.PlayerData pd = data(p);
+            List<Data.PlayerData> list = new ArrayList<>(DATA.players.values());
+            list.sort((x, y) -> Long.compare(y.money, x.money));
+            say(p, "---- Your stats ----", ChatFormatting.GOLD);
+            say(p, "Money: " + Prices.money(pd.money), ChatFormatting.YELLOW);
+            say(p, "Money rank: #" + (list.indexOf(pd) + 1) + " of " + list.size(), ChatFormatting.YELLOW);
+            say(p, "Homes: " + pd.homes.size() + "/" + MAX_HOMES, ChatFormatting.YELLOW);
+            return 1;
+        }));
+        d.register(Commands.literal("homeicon").then(Commands.argument("name", StringArgumentType.word()).executes(ctx -> {
+            ServerPlayer p = player(ctx);
+            if (p == null) return 0;
+            Data.Home h = data(p).homes.get(StringArgumentType.getString(ctx, "name"));
+            if (h == null) { say(p, "No home with that name", ChatFormatting.RED); return 0; }
+            int i = HOME_ICONS.indexOf(h.icon == null ? "white_bed" : h.icon);
+            h.icon = HOME_ICONS.get((i + 1) % HOME_ICONS.size());
+            save();
+            openScreen(p, "home", StringArgumentType.getString(ctx, "name") + "|" + h.icon);
+            return 1;
+        })));
+        d.register(Commands.literal("renamehome").then(Commands.argument("name", StringArgumentType.word())
+            .then(Commands.argument("newname", StringArgumentType.word()).executes(ctx -> {
+                ServerPlayer p = player(ctx);
+                if (p == null) return 0;
+                String from = StringArgumentType.getString(ctx, "name"), to = StringArgumentType.getString(ctx, "newname");
+                Map<String, Data.Home> homes = data(p).homes;
+                if (!homes.containsKey(from)) { say(p, "No home called " + from, ChatFormatting.RED); return 0; }
+                if (homes.containsKey(to)) { say(p, "You already have a home called " + to, ChatFormatting.RED); return 0; }
+                Map<String, Data.Home> renamed = new LinkedHashMap<>();
+                homes.forEach((k, v) -> renamed.put(k.equals(from) ? to : k, v));
+                homes.clear();
+                homes.putAll(renamed);
+                save();
+                say(p, "Renamed " + from + " to " + to, ChatFormatting.GREEN);
+                return 1;
+            }))));
         d.register(Commands.literal("sell").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) SellMenu.open(p); return 1; }));
-        d.register(Commands.literal("settings").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) SettingsMenu.open(p); return 1; }));
+        d.register(Commands.literal("settings").executes(ctx -> {
+            ServerPlayer p = player(ctx);
+            if (p != null && !openScreen(p, "menu", "")) SettingsMenu.open(p);
+            return 1;
+        }));
 
         // /bal and /bal <player>
         LiteralArgumentBuilder<CommandSourceStack> bal = Commands.literal("bal")
@@ -313,6 +393,7 @@ public class SmpMod implements ModInitializer {
                 if (data(p).homes.remove(name) == null) { say(p, "You don't have a home called " + name, ChatFormatting.RED); return 0; }
                 say(p, "Deleted home " + name, ChatFormatting.YELLOW);
                 save();
+                if (!data(p).homes.isEmpty()) openHomes(p);
                 return 1;
             })));
         d.register(Commands.literal("homes").executes(ctx -> {
@@ -361,6 +442,7 @@ public class SmpMod implements ModInitializer {
         Map<String, Data.Home> homes = data(p).homes;
         if (name == null) {
             if (homes.isEmpty()) return setHome(ctx, "home"); // first /home sets your home right here
+            if (ServerPlayNetworking.canSend(p, ScreenPayload.TYPE)) { openHomes(p); return 1; }
             name = homes.containsKey("home") ? "home" : homes.keySet().iterator().next();
         }
         Data.Home h = homes.get(name);

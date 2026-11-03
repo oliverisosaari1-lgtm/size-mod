@@ -3,7 +3,7 @@
   "id": "donutsmp",
   "version": "${version}",
   "name": "DonutSMP Mod",
-  "description": "Fan-made SMP features: money, /ah shop, /sell, /pay, /bal, /baltop, /rtp, /tpa, /home, /spawn, combat tag, /settings.",
+  "description": "Fan-made DonutSMP-style features: money, /ah, /sell, /pay, /bal, /baltop, /rtp, /tpa, /home menu, /spawn, combat tag, /settings menu.",
   "authors": [
     "Iikka"
   ],

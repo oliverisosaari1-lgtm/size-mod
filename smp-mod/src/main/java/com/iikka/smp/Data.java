@@ -18,6 +18,7 @@ public class Data {
         public String dimension;
         public double x, y, z;
         public float yaw, pitch;
+        public String icon = "white_bed";
     }
 
     public static class PlayerData {

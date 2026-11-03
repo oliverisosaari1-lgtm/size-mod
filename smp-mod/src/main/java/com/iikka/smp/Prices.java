@@ -121,6 +121,18 @@ public class Prices {
         return price(stack.getItem()) * stack.getCount();
     }
 
+    /** 1234 -> "1.2K" (no dollar sign) */
+    public static String shortNum(long amount) {
+        return money(amount).replace("$", "");
+    }
+
+    /** "~$ 40" with a gray ~, green $ and white number, like DonutSMP. */
+    public static net.minecraft.network.chat.Component priceLine(long amount) {
+        return net.minecraft.network.chat.Component.literal("~").withStyle(s -> s.withColor(net.minecraft.ChatFormatting.GRAY).withItalic(false))
+            .append(net.minecraft.network.chat.Component.literal("$ ").withStyle(s -> s.withColor(net.minecraft.ChatFormatting.GREEN).withItalic(false)))
+            .append(net.minecraft.network.chat.Component.literal(shortNum(amount)).withStyle(s -> s.withColor(net.minecraft.ChatFormatting.WHITE).withItalic(false)));
+    }
+
     /** 1234 -> "$1.2K", 500000000 -> "$500M" */
     public static String money(long amount) {
         String sign = amount < 0 ? "-" : "";

@@ -27,6 +27,16 @@ public class Gui {
         p.level().addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(p.level(), p.getX(), p.getY(), p.getZ(), stack));
     }
 
+    public static ItemStack withLore(ItemStack stack, Component name, List<Component> lore) {
+        if (name != null) stack.set(DataComponents.CUSTOM_NAME, name);
+        stack.set(DataComponents.LORE, new ItemLore(lore));
+        return stack;
+    }
+
+    public static Component text(String t, ChatFormatting color) {
+        return Component.literal(t).withStyle(s -> s.withColor(color).withItalic(false));
+    }
+
     public static ItemStack filler() {
         return button(Items.GLASS_PANE, " ", ChatFormatting.GRAY);
     }
