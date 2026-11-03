@@ -158,6 +158,7 @@ public class SmpMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(s -> {
             tick++;
             if (tick % (20 * 60 * 5) == 0) save();
+            if (tick % 40 == 0) updateSidebar(); // keep the money box up to date
             if (tick % 20 == 0) {
                 for (ServerPlayer p : s.getPlayerList().getPlayers()) {
                     Long until = combatUntil.get(p.getUUID());

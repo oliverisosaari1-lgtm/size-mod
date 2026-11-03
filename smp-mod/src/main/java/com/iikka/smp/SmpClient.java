@@ -15,7 +15,7 @@ import java.util.List;
 /** The parts that run in the player's game: money box, price tooltips and the menu screens. */
 public class SmpClient implements ClientModInitializer {
     private static long money = 0;
-    private static boolean show = false;
+    private static boolean show = true;
 
     @Override
     public void onInitializeClient() {
@@ -48,14 +48,17 @@ public class SmpClient implements ClientModInitializer {
 
         // "~$ 40" under the item name, like DonutSMP. Skipped for the mod's own menu buttons.
         ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> {
-            if (stack.has(DataComponents.CUSTOM_NAME) || stack.has(DataComponents.LORE) || lines.isEmpty()) return;
+            if (lines.isEmpty() || stack.isEmpty()) return;
+            var lore = stack.get(DataComponents.LORE);
+            if (stack.get(DataComponents.CUSTOM_NAME) != null && lore != null && !lore.lines().isEmpty()) return; // menu buttons
+            if (lore != null && !lore.lines().isEmpty() && lore.lines().get(0).getString().startsWith("~$")) return; // auction items
             lines.add(1, Prices.priceLine(Prices.price(stack)));
         });
 
         // Money box on the right: your name, then a green $ and the amount
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("donutsmp", "money"), (graphics, tick) -> {
             Minecraft mc = Minecraft.getInstance();
-            if (!show || mc.player == null) return;
+            if (!show || mc.player == null || mc.level == null) return;
             var font = mc.font;
             String name = mc.player.getName().getString();
             String amount = Prices.shortNum(money);
