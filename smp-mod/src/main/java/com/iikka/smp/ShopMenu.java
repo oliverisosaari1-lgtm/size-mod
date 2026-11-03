@@ -27,19 +27,35 @@ public class ShopMenu extends ChestMenu {
     private static final int PREV = 45, FILTER = 47, QUICK = 48, SEARCH = 49, INFO = 50, MINE = 51, NEXT = 53;
 
     private final SimpleContainer box;
-    private final List<Item> items;
-    private final int page, mode;
-    private final String search;
-    private final boolean quick;
+    private List<Item> items;
+    private int page, mode;
+    private String search;
+    private boolean quick;
 
     public static void open(ServerPlayer player, String search, boolean quick, int mode, int page) {
         List<Item> list = list(search, quick, mode);
         int pages = Math.max(1, (list.size() + PER_PAGE - 1) / PER_PAGE);
         int pg = Math.max(0, Math.min(page, pages - 1));
-        String title = (quick ? "Quick Buy" : "Auction") + " (Page " + (pg + 1) + ")";
         player.openMenu(new SimpleMenuProvider(
             (id, inv, p) -> new ShopMenu(id, inv, new SimpleContainer(54), list, search, quick, mode, pg),
-            Component.literal(title)));
+            title(quick, pg)));
+    }
+
+    private static Component title(boolean quick, int page) {
+        return Component.literal((quick ? "Quick Buy" : "Auction") + " (Page " + (page + 1) + ")");
+    }
+
+    /** Change page/filter without closing the menu, so the mouse stays where it is. */
+    private void refresh(ServerPlayer player, String search, boolean quick, int mode, int page) {
+        this.search = search;
+        this.quick = quick;
+        this.mode = mode;
+        this.items = list(search, quick, mode);
+        this.page = Math.max(0, Math.min(page, pages() - 1));
+        fill();
+        // Re-send the window with the new title. Same window id, and no "close" first, so the cursor doesn't jump.
+        player.connection.send(new net.minecraft.network.protocol.game.ClientboundOpenScreenPacket(containerId, MenuType.GENERIC_9x6, title(this.quick, this.page)));
+        sendAllDataToRemote();
     }
 
     private static List<Item> list(String search, boolean quick, int mode) {
@@ -104,10 +120,10 @@ public class ShopMenu extends ChestMenu {
     public void clicked(int slot, int button, ContainerInput type, Player p) {
         if (!(p instanceof ServerPlayer player)) return;
         if (slot >= 0 && slot < 54) {
-            if (slot == PREV && page > 0) { open(player, search, quick, mode, page - 1); return; }
-            if (slot == NEXT && page < pages() - 1) { open(player, search, quick, mode, page + 1); return; }
-            if (slot == FILTER) { open(player, search, quick, (mode + 1) % MODES.length, 0); return; }
-            if (slot == QUICK) { open(player, null, !quick, mode, 0); return; }
+            if (slot == PREV && page > 0) { refresh(player, search, quick, mode, page - 1); return; }
+            if (slot == NEXT && page < pages() - 1) { refresh(player, search, quick, mode, page + 1); return; }
+            if (slot == FILTER) { refresh(player, search, quick, (mode + 1) % MODES.length, 0); return; }
+            if (slot == QUICK) { refresh(player, null, !quick, mode, 0); return; }
             if (slot == SEARCH) {
                 player.closeContainer();
                 if (!SmpMod.openScreen(player, "chat", "/ah ")) {

@@ -58,7 +58,13 @@ public class SmpClient implements ClientModInitializer {
         // Money box on the right: your name, then a green $ and the amount
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("donutsmp", "money"), (graphics, tick) -> {
             Minecraft mc = Minecraft.getInstance();
-            if (!show || mc.player == null || mc.level == null) return;
+            if (mc.player == null || mc.level == null) return;
+            // In singleplayer read the money straight from the world, in case the server message didn't arrive
+            if (mc.hasSingleplayerServer()) {
+                Data.PlayerData pd = SmpMod.DATA.players.get(mc.player.getUUID().toString());
+                if (pd != null) { money = pd.money; show = pd.moneyHud; }
+            }
+            if (!show) return;
             var font = mc.font;
             String name = mc.player.getName().getString();
             String amount = Prices.shortNum(money);
