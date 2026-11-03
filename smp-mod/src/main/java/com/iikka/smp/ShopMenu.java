@@ -9,7 +9,7 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -68,12 +68,12 @@ public class ShopMenu extends ChestMenu {
     }
 
     @Override
-    public void clicked(int slot, int button, ClickType type, Player p) {
+    public void clicked(int slot, int button, ContainerInput type, Player p) {
         if (!(p instanceof ServerPlayer player)) return;
         if (slot >= 0 && slot < 54) {
             if (slot == 45 && page > 0) page--;
             else if (slot == 53 && page < pages() - 1) page++;
-            else if (slot < PER_PAGE && (type == ClickType.PICKUP || type == ClickType.QUICK_MOVE)) {
+            else if (slot < PER_PAGE && (type == ContainerInput.PICKUP || type == ContainerInput.QUICK_MOVE)) {
                 int idx = page * PER_PAGE + slot;
                 if (idx < items.size()) buy(player, items.get(idx), button == 1 ? items.get(idx).getDefaultMaxStackSize() : 1);
             }
@@ -81,7 +81,7 @@ public class ShopMenu extends ChestMenu {
             sendAllDataToRemote();
             return;
         }
-        if (type == ClickType.QUICK_MOVE) return; // don't shift-click your stuff into the shop
+        if (type == ContainerInput.QUICK_MOVE) return; // don't shift-click your stuff into the shop
         super.clicked(slot, button, type, p);
     }
 
@@ -93,7 +93,7 @@ public class ShopMenu extends ChestMenu {
         }
         SmpMod.addMoney(player, -cost);
         ItemStack stack = new ItemStack(item, count);
-        if (!player.getInventory().add(stack)) player.drop(stack, false);
+        player.getInventory().placeItemBackInInventory(stack);
         player.sendSystemMessage(Component.literal("Bought " + count + "x " + item.getName(new ItemStack(item)).getString()
             + " for " + Prices.money(cost)).withStyle(ChatFormatting.GREEN));
     }

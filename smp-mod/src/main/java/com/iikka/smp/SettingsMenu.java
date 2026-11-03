@@ -8,7 +8,7 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -30,7 +30,7 @@ public class SettingsMenu extends ChestMenu {
     }
 
     private static ItemStack toggle(String name, boolean on, String info) {
-        return Gui.button(on ? Items.LIME_DYE : Items.GRAY_DYE, name + ": " + (on ? "ON" : "OFF"),
+        return Gui.button(on ? Items.EMERALD_BLOCK : Items.REDSTONE_BLOCK, name + ": " + (on ? "ON" : "OFF"),
             on ? ChatFormatting.GREEN : ChatFormatting.RED, info, "Click to switch");
     }
 
@@ -43,7 +43,7 @@ public class SettingsMenu extends ChestMenu {
     }
 
     @Override
-    public void clicked(int slot, int button, ClickType type, Player p) {
+    public void clicked(int slot, int button, ContainerInput type, Player p) {
         if (!(p instanceof ServerPlayer player)) return;
         if (slot >= 0 && slot < 27) {
             Data.PlayerData d = SmpMod.data(player);
@@ -54,7 +54,7 @@ public class SettingsMenu extends ChestMenu {
             sendAllDataToRemote();
             return;
         }
-        if (type == ClickType.QUICK_MOVE) return;
+        if (type == ContainerInput.QUICK_MOVE) return;
         super.clicked(slot, button, type, p);
     }
 

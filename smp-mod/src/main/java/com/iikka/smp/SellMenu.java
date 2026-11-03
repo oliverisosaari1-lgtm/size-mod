@@ -8,7 +8,7 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -44,12 +44,12 @@ public class SellMenu extends ChestMenu {
 
     private void updateButtons() {
         for (int i = ITEM_SLOTS; i < 54; i++) box.setItem(i, Gui.filler());
-        box.setItem(CONFIRM, Gui.button(Items.LIME_STAINED_GLASS_PANE, "Confirm sell", ChatFormatting.GREEN,
+        box.setItem(CONFIRM, Gui.button(Items.EMERALD_BLOCK, "Confirm sell", ChatFormatting.GREEN,
             "You get: " + Prices.money(total())));
     }
 
     @Override
-    public void clicked(int slot, int button, ClickType type, Player p) {
+    public void clicked(int slot, int button, ContainerInput type, Player p) {
         if (slot >= ITEM_SLOTS && slot < 54) {
             if (slot == CONFIRM && p instanceof ServerPlayer player) sell(player);
             updateButtons();
@@ -98,7 +98,7 @@ public class SellMenu extends ChestMenu {
         // Give back anything that wasn't sold
         for (int i = 0; i < ITEM_SLOTS; i++) {
             ItemStack s = box.removeItemNoUpdate(i);
-            if (!s.isEmpty() && !player.getInventory().add(s)) player.drop(s, false);
+            if (!s.isEmpty()) player.getInventory().placeItemBackInInventory(s);
         }
         for (int i = ITEM_SLOTS; i < 54; i++) box.setItem(i, ItemStack.EMPTY);
     }

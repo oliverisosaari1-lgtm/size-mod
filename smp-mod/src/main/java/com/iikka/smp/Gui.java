@@ -22,6 +22,6 @@ public class Gui {
     }
 
     public static ItemStack filler() {
-        return button(Items.GRAY_STAINED_GLASS_PANE, " ", ChatFormatting.GRAY);
+        return button(Items.GLASS_PANE, " ", ChatFormatting.GRAY);
     }
 }
