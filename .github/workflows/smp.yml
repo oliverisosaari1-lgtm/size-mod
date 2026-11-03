@@ -26,6 +26,8 @@ jobs:
         run: |
           JAR=$(find ~/.gradle/caches -name 'minecraft-merged*.jar' | grep -v sources | head -1)
           CP="$JAR:$(find ~/.gradle/caches -name 'fabric-*.jar' | grep -v sources | tr '\n' ':')"
+          unzip -l "$JAR" | grep -iE 'client/gui/[A-Za-z]*Graphics|client/gui/Gui[A-Z][A-Za-z]*\.class' | head -20
+          javap -cp "$CP" net.minecraft.client.Options | grep -iE 'boolean hide' || true
           for c in $(cat debug-classes.txt 2>/dev/null); do echo "=== $c"; javap -cp "$CP" "$c" || true; done
       - name: Publish release
         if: github.ref == 'refs/heads/main'
