@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// Minecraft normally caps the scale attribute between 0.0625 and 16. Let it go from 0.01 to 100.
+// Minecraft normally caps the scale attribute between 0.0625 and 16. Let it go from TINIEST_SCALE to 100.
 @Mixin(RangedAttribute.class)
 public abstract class RangedAttributeMixin {
     @Inject(method = "sanitizeValue", at = @At("HEAD"), cancellable = true)

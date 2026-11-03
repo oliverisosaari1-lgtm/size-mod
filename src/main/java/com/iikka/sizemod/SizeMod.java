@@ -17,13 +17,15 @@ public class SizeMod implements ModInitializer {
     // 1 = normal size, 0.1 = smallest, 100 = biggest
     public static final double MIN_SIZE = 0.1;
     public static final double MAX_SIZE = 100.0;
-    // What the game scale becomes at /size 0.1. Much smaller than vanilla allows (0.0625).
-    public static final double TINIEST_SCALE = 0.01;
+    // Game scale at /size 0.1. Any smaller and the camera starts seeing through the ground.
+    public static final double TINIEST_SCALE = 0.04;
 
-    // Above 1 the number is the scale. Below 1 it slides from 1 down to TINIEST_SCALE at 0.1.
+    // Above 1 the number is the scale. Below 1 it shrinks fast (exponentially) down to
+    // TINIEST_SCALE at 0.1, so 0.2 is already much smaller than a grass plant.
     public static double toScale(double size) {
         if (size >= 1.0) return size;
-        return TINIEST_SCALE + (size - MIN_SIZE) * (1.0 - TINIEST_SCALE) / (1.0 - MIN_SIZE);
+        double t = (1.0 - size) / (1.0 - MIN_SIZE); // 0 at size 1, 1 at size 0.1
+        return Math.pow(TINIEST_SCALE, t);
     }
 
     @Override
