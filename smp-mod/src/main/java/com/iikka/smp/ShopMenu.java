@@ -27,13 +27,13 @@ public class ShopMenu extends ChestMenu {
     private static final int PREV = 45, FILTER = 47, QUICK = 48, SEARCH = 49, INFO = 50, MINE = 51, NEXT = 53;
 
     private final SimpleContainer box;
-    private List<Item> items;
+    private List<Object> items;
     private int page, mode;
     private String search;
     private boolean quick;
 
     public static void open(ServerPlayer player, String search, boolean quick, int mode, int page) {
-        List<Item> list = list(search, quick, mode);
+        List<Object> list = list(search, quick, mode);
         int pages = Math.max(1, (list.size() + PER_PAGE - 1) / PER_PAGE);
         int pg = Math.max(0, Math.min(page, pages - 1));
         player.openMenu(new SimpleMenuProvider(
@@ -58,20 +58,36 @@ public class ShopMenu extends ChestMenu {
         sendAllDataToRemote();
     }
 
-    private static List<Item> list(String search, boolean quick, int mode) {
-        List<Item> base = new ArrayList<>(quick ? new ArrayList<>(Prices.SHOP.keySet()) : Prices.allItems());
-        if (search != null && !search.isBlank()) {
-            String q = search.toLowerCase(Locale.ROOT).trim();
-            base.removeIf(item -> !new ItemStack(item).getHoverName().getString().toLowerCase(Locale.ROOT).contains(q)
-                && !BuiltInRegistries.ITEM.getKey(item).getPath().contains(q.replace(' ', '_')));
-        }
-        if (mode == 0) base.sort(Comparator.comparingLong(Prices::buyPrice));
-        else if (mode == 1) base.sort(Comparator.comparingLong(Prices::buyPrice).reversed());
-        else java.util.Collections.reverse(base);
-        return base;
+    private static long priceOf(Object o) {
+        return o instanceof Data.Listing l ? l.price : Prices.buyPrice((Item) o);
     }
 
-    private ShopMenu(int id, Inventory inv, SimpleContainer box, List<Item> items, String search, boolean quick, int mode, int page) {
+    private static boolean matches(String q, ItemStack stack) {
+        return stack.getHoverName().getString().toLowerCase(Locale.ROOT).contains(q)
+            || BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath().contains(q.replace(' ', '_'));
+    }
+
+    private static List<Object> list(String search, boolean quick, int mode) {
+        String q = search == null || search.isBlank() ? null : search.toLowerCase(Locale.ROOT).trim();
+        // Player listings first, then every item in the game
+        List<Object> players = new ArrayList<>();
+        if (!quick) {
+            for (Data.Listing l : SmpMod.DATA.listings) {
+                if (q == null || matches(q, Listings.load(SmpMod.server(), l))) players.add(l);
+            }
+        }
+        List<Object> game = new ArrayList<>();
+        for (Item item : quick ? new ArrayList<>(Prices.SHOP.keySet()) : Prices.allItems()) {
+            if (q == null || matches(q, new ItemStack(item))) game.add(item);
+        }
+        if (mode == 0) { players.sort(Comparator.comparingLong(ShopMenu::priceOf)); game.sort(Comparator.comparingLong(ShopMenu::priceOf)); }
+        else if (mode == 1) { players.sort(Comparator.comparingLong(ShopMenu::priceOf).reversed()); game.sort(Comparator.comparingLong(ShopMenu::priceOf).reversed()); }
+        else { players.sort(Comparator.comparingLong((Object o) -> ((Data.Listing) o).time).reversed()); java.util.Collections.reverse(game); }
+        players.addAll(game);
+        return players;
+    }
+
+    private ShopMenu(int id, Inventory inv, SimpleContainer box, List<Object> items, String search, boolean quick, int mode, int page) {
         super(MenuType.GENERIC_9x6, id, inv, box, 6);
         this.box = box;
         this.items = items;
@@ -91,7 +107,11 @@ public class ShopMenu extends ChestMenu {
         for (int i = 0; i < PER_PAGE; i++) {
             int idx = page * PER_PAGE + i;
             if (idx >= items.size()) break;
-            Item item = items.get(idx);
+            if (items.get(idx) instanceof Data.Listing l) {
+                box.setItem(i, Listings.display(SmpMod.server(), l, "Click to buy"));
+                continue;
+            }
+            Item item = (Item) items.get(idx);
             List<Component> lore = new ArrayList<>();
             lore.add(Prices.priceLine(Prices.buyPrice(item)));
             lore.add(Gui.text("Left click to buy 1", ChatFormatting.GRAY));
@@ -112,8 +132,8 @@ public class ShopMenu extends ChestMenu {
         box.setItem(SEARCH, Gui.button(Items.ANVIL, "Search", ChatFormatting.WHITE,
             search == null || search.isBlank() ? "Click to search" : "Searching: " + search, "Click to search"));
         box.setItem(INFO, Gui.button(Items.OAK_SIGN, "Auction House", ChatFormatting.WHITE,
-            "Every item in the game is here!", "Left click: buy 1", "Right click: buy a stack"));
-        box.setItem(MINE, Gui.button(Items.CHEST, "Your Items", ChatFormatting.WHITE, "Click to view"));
+            "Every item in the game is here!", "Left click: buy 1", "Right click: buy a stack", "Sell your own: /ah sell <price>"));
+        box.setItem(MINE, Gui.button(Items.CHEST, "Your Items", ChatFormatting.WHITE, "Click to view", "Sell: hold an item, /ah sell <price>"));
     }
 
     @Override
@@ -131,11 +151,19 @@ public class ShopMenu extends ChestMenu {
                 }
                 return;
             }
-            if (slot == MINE) {
-                player.sendSystemMessage(Component.literal("You have no items listed. Selling to other players is coming soon!").withStyle(ChatFormatting.YELLOW));
-            } else if (slot < PER_PAGE && (type == ContainerInput.PICKUP || type == ContainerInput.QUICK_MOVE)) {
+            if (slot == MINE) { YourItemsMenu.open(player); return; }
+            if (slot < PER_PAGE && (type == ContainerInput.PICKUP || type == ContainerInput.QUICK_MOVE)) {
                 int idx = page * PER_PAGE + slot;
-                if (idx < items.size()) buy(player, items.get(idx), button == 1 ? items.get(idx).getDefaultMaxStackSize() : 1);
+                if (idx < items.size()) {
+                    Object o = items.get(idx);
+                    if (o instanceof Data.Listing l) {
+                        Listings.buy(player, l);
+                        refresh(player, search, quick, mode, page);
+                        return;
+                    }
+                    Item item = (Item) o;
+                    buy(player, item, button == 1 ? item.getDefaultMaxStackSize() : 1);
+                }
             }
             sendAllDataToRemote();
             return;

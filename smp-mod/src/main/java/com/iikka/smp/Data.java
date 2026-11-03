@@ -31,6 +31,18 @@ public class Data {
     }
 
     public Map<String, PlayerData> players = new HashMap<>();
+    public java.util.List<Listing> listings = new java.util.ArrayList<>();
+    public long nextListingId = 1;
+
+    /** An item a player put up for sale with /ah sell. */
+    public static class Listing {
+        public long id;
+        public String seller;      // UUID
+        public String sellerName;
+        public String item;        // the item saved as JSON
+        public long price;
+        public long time;          // when it was listed
+    }
 
     public PlayerData get(UUID id) {
         return players.computeIfAbsent(id.toString(), k -> new PlayerData());
@@ -44,6 +56,7 @@ public class Data {
                 Data d = GSON.fromJson(Files.readString(file), Data.class);
                 if (d != null) {
                     if (d.players == null) d.players = new HashMap<>();
+                    if (d.listings == null) d.listings = new java.util.ArrayList<>();
                     return d;
                 }
             }

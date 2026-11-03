@@ -132,6 +132,14 @@ public class SmpMod implements ModInitializer {
         return null;
     }
 
+    public static MinecraftServer server() {
+        return server;
+    }
+
+    public static void saveNow() {
+        save();
+    }
+
     private static void save() {
         if (dataFile != null) DATA.save(dataFile);
     }
@@ -192,6 +200,14 @@ public class SmpMod implements ModInitializer {
     private static void register(CommandDispatcher<CommandSourceStack> d) {
         d.register(Commands.literal("ah")
             .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p, null, false, 0, 0); return 1; })
+            .then(Commands.literal("sell").then(Commands.argument("price", StringArgumentType.word()).executes(ctx -> {
+                ServerPlayer p = player(ctx);
+                if (p == null) return 0;
+                long price = Prices.parse(StringArgumentType.getString(ctx, "price"));
+                if (price <= 0) { say(p, "Type a price like 500, 10k or 2m", ChatFormatting.RED); return 0; }
+                Listings.list(p, price);
+                return 1;
+            })))
             .then(Commands.argument("search", StringArgumentType.greedyString()).executes(ctx -> {
                 ServerPlayer p = player(ctx);
                 if (p != null) ShopMenu.open(p, StringArgumentType.getString(ctx, "search"), false, 0, 0);
