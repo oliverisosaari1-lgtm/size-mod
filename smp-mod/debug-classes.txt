@@ -1,3 +1,5 @@
-com.mojang.blaze3d.platform.Window
-net.minecraft.client.MouseHandler
-net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
+net.minecraft.client.KeyMapping
+net.minecraft.client.KeyMapping$Category
+com.mojang.blaze3d.platform.InputConstants
+net.minecraft.client.renderer.GameRenderer
+net.fabricmc.fabric.api.client.screen.v1.Screens
