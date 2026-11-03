@@ -4,10 +4,19 @@
   "version": "${version}",
   "name": "DonutSMP Mod",
   "description": "Fan-made SMP features: money, /ah shop, /sell, /pay, /bal, /baltop, /rtp, /tpa, /home, /spawn, combat tag, /settings.",
-  "authors": ["Iikka"],
+  "authors": [
+    "Iikka"
+  ],
   "license": "MIT",
   "environment": "*",
-  "entrypoints": { "main": ["com.iikka.smp.SmpMod"] },
+  "entrypoints": {
+    "main": [
+      "com.iikka.smp.SmpMod"
+    ],
+    "client": [
+      "com.iikka.smp.SmpClient"
+    ]
+  },
   "depends": {
     "fabricloader": ">=0.20.0",
     "minecraft": "~26.3",

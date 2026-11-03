@@ -26,9 +26,9 @@ public class Data {
         public Map<String, Home> homes = new LinkedHashMap<>();
         public boolean tpaRequests = true;
         public boolean combatTimer = true;
+        public boolean moneyHud = true;
     }
 
-    public boolean moneySidebar = true;
     public Map<String, PlayerData> players = new HashMap<>();
 
     public PlayerData get(UUID id) {

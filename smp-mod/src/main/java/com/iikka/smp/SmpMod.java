@@ -10,14 +10,15 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.numbers.FixedFormat;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,10 +26,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraft.world.scores.DisplaySlot;
-import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.Scoreboard;
-import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,23 +72,14 @@ public class SmpMod implements ModInitializer {
 
     public static void updateSidebar() {
         if (server == null) return;
-        Scoreboard board = server.getScoreboard();
-        Objective obj = board.getObjective("donut_money");
-        if (obj == null) {
-            obj = board.addObjective("donut_money", ObjectiveCriteria.DUMMY,
-                Component.literal("$ Money").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
-                ObjectiveCriteria.RenderType.INTEGER, true, null);
-        }
-        if (!DATA.moneySidebar) {
-            board.setDisplayObjective(DisplaySlot.SIDEBAR, null);
-            return;
-        }
-        board.setDisplayObjective(DisplaySlot.SIDEBAR, obj);
+        // Remove the old scoreboard sidebar from earlier versions
+        var board = server.getScoreboard();
+        var old = board.getObjective("donut_money");
+        if (old != null) board.removeObjective(old);
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            long m = money(p);
-            var score = board.getOrCreatePlayerScore(p, obj);
-            score.set((int) Math.min(Integer.MAX_VALUE, m));
-            score.numberFormatOverride(new FixedFormat(Component.literal(Prices.money(m)).withStyle(ChatFormatting.GREEN)));
+            if (ServerPlayNetworking.canSend(p, MoneyPayload.TYPE)) {
+                ServerPlayNetworking.send(p, new MoneyPayload(money(p), data(p).moneyHud));
+            }
         }
     }
 
@@ -136,6 +124,7 @@ public class SmpMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PayloadTypeRegistry.playS2C().register(MoneyPayload.TYPE, MoneyPayload.CODEC);
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             server = s;
             dataFile = s.getWorldPath(LevelResource.ROOT).resolve("donutsmp_mod.json");
@@ -146,7 +135,7 @@ public class SmpMod implements ModInitializer {
             save();
             server = null;
         });
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> updateSidebar());
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> s.execute(SmpMod::updateSidebar));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> save());
 
         ServerTickEvents.END_SERVER_TICK.register(s -> {
@@ -250,7 +239,7 @@ public class SmpMod implements ModInitializer {
                 BlockState ground = level.getBlockState(new BlockPos(x, y - 1, z));
                 if (y <= level.getMinY() + 1 || !ground.getFluidState().isEmpty() || ground.isAir()) continue;
                 teleport(p, level, x + 0.5, y, z + 0.5, p.getYRot(), p.getXRot());
-                say(p, "Teleported to " + x + ", " + y + ", " + z, ChatFormatting.GREEN);
+                say(p, "Teleported to a random place!", ChatFormatting.GREEN);
                 return 1;
             }
             say(p, "Couldn't find a safe spot, try again!", ChatFormatting.RED);

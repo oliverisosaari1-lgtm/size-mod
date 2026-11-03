@@ -37,7 +37,7 @@ public class SettingsMenu extends ChestMenu {
     private void fill(ServerPlayer player) {
         Data.PlayerData d = SmpMod.data(player);
         for (int i = 0; i < 27; i++) box.setItem(i, Gui.filler());
-        box.setItem(11, toggle("Money on screen", SmpMod.DATA.moneySidebar, "Shows everyone's money on the right"));
+        box.setItem(11, toggle("Money on screen", d.moneyHud, "Shows your money on the right"));
         box.setItem(13, toggle("TPA requests", d.tpaRequests, "Let other players send you /tpa"));
         box.setItem(15, toggle("Combat timer", d.combatTimer, "Show the combat countdown"));
     }
@@ -47,7 +47,7 @@ public class SettingsMenu extends ChestMenu {
         if (!(p instanceof ServerPlayer player)) return;
         if (slot >= 0 && slot < 27) {
             Data.PlayerData d = SmpMod.data(player);
-            if (slot == 11) { SmpMod.DATA.moneySidebar = !SmpMod.DATA.moneySidebar; SmpMod.updateSidebar(); }
+            if (slot == 11) { d.moneyHud = !d.moneyHud; SmpMod.updateSidebar(); }
             if (slot == 13) d.tpaRequests = !d.tpaRequests;
             if (slot == 15) d.combatTimer = !d.combatTimer;
             fill(player);
