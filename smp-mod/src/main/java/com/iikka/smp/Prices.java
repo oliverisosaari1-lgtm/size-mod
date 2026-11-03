@@ -1,10 +1,15 @@
 package com.iikka.smp;
 
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /** What every item costs. Items in SHOP can be bought in /ah. Anything else sells for DEFAULT_PRICE. */
@@ -71,6 +76,41 @@ public class Prices {
         SELL_ONLY.put(Items.ANCIENT_DEBRIS, 1_000_000L);
     }
 
+    /** Admin-only items that can't be bought. */
+    private static boolean hidden(String id) {
+        return id.equals("air") || id.contains("command_block") || id.equals("barrier") || id.startsWith("structure_")
+            || id.equals("jigsaw") || id.equals("debug_stick") || id.equals("knowledge_book") || id.equals("light")
+            || id.startsWith("test_");
+    }
+
+    private static List<Item> all;
+
+    /** Every item in the game for /ah, in creative-menu-ish order. */
+    public static List<Item> allItems() {
+        if (all == null) {
+            all = new ArrayList<>();
+            for (Item item : BuiltInRegistries.ITEM) {
+                if (!hidden(BuiltInRegistries.ITEM.getKey(item).getPath())) all.add(item);
+            }
+        }
+        return all;
+    }
+
+    /** What it costs to buy one in /ah. Items not in the list get a price from how rare they are. */
+    public static long buyPrice(Item item) {
+        Long p = SHOP.get(item);
+        if (p == null) p = SELL_ONLY.get(item);
+        if (p != null) return p;
+        String id = BuiltInRegistries.ITEM.getKey(item).getPath();
+        if (id.endsWith("_spawn_egg")) return 5_000_000L;
+        if (id.endsWith("_ore")) return 20_000L;
+        Rarity rarity = new ItemStack(item).get(DataComponents.RARITY);
+        long base = rarity == Rarity.EPIC ? 10_000_000L : rarity == Rarity.RARE ? 1_000_000L : rarity == Rarity.UNCOMMON ? 50_000L : 500L;
+        if (item.getDefaultMaxStackSize() == 1) base *= 20; // tools, armor and such
+        return base;
+    }
+
+    /** What you get for selling one with /sell. */
     public static long price(Item item) {
         Long p = SHOP.get(item);
         if (p == null) p = SELL_ONLY.get(item);

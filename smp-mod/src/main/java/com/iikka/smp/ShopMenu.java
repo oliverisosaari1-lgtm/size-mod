@@ -23,7 +23,7 @@ import java.util.List;
 public class ShopMenu extends ChestMenu {
     private static final int PER_PAGE = 45;
     private final SimpleContainer box;
-    private final List<Item> items = new ArrayList<>(Prices.SHOP.keySet());
+    private final List<Item> items = Prices.allItems();
     private int page = 0;
 
     public static void open(ServerPlayer player) {
@@ -50,7 +50,7 @@ public class ShopMenu extends ChestMenu {
             Item item = items.get(idx);
             ItemStack shown = new ItemStack(item);
             List<Component> lore = new ArrayList<>();
-            lore.add(line("Price: " + Prices.money(Prices.price(item)), ChatFormatting.GREEN));
+            lore.add(line("Price: " + Prices.money(Prices.buyPrice(item)), ChatFormatting.GREEN));
             lore.add(line("Left click: buy 1", ChatFormatting.GRAY));
             lore.add(line("Right click: buy " + item.getDefaultMaxStackSize(), ChatFormatting.GRAY));
             shown.set(DataComponents.LORE, new ItemLore(lore));
@@ -59,6 +59,8 @@ public class ShopMenu extends ChestMenu {
         for (int i = 45; i < 54; i++) box.setItem(i, Gui.filler());
         if (page > 0) box.setItem(45, Gui.button(Items.ARROW, "Previous page", ChatFormatting.YELLOW));
         if (page < pages() - 1) box.setItem(53, Gui.button(Items.ARROW, "Next page", ChatFormatting.YELLOW));
+        if (page > 0) box.setItem(46, Gui.button(Items.SPECTRAL_ARROW, "Back 5 pages", ChatFormatting.YELLOW));
+        if (page < pages() - 1) box.setItem(52, Gui.button(Items.SPECTRAL_ARROW, "Forward 5 pages", ChatFormatting.YELLOW));
         box.setItem(49, Gui.button(Items.GOLD_INGOT, "Your money: " + Prices.money(SmpMod.money(player)), ChatFormatting.GOLD,
             "Page " + (page + 1) + " of " + pages()));
     }
@@ -73,6 +75,8 @@ public class ShopMenu extends ChestMenu {
         if (slot >= 0 && slot < 54) {
             if (slot == 45 && page > 0) page--;
             else if (slot == 53 && page < pages() - 1) page++;
+            else if (slot == 46) page = Math.max(0, page - 5);
+            else if (slot == 52) page = Math.min(pages() - 1, page + 5);
             else if (slot < PER_PAGE && (type == ContainerInput.PICKUP || type == ContainerInput.QUICK_MOVE)) {
                 int idx = page * PER_PAGE + slot;
                 if (idx < items.size()) buy(player, items.get(idx), button == 1 ? items.get(idx).getDefaultMaxStackSize() : 1);
@@ -86,7 +90,7 @@ public class ShopMenu extends ChestMenu {
     }
 
     private void buy(ServerPlayer player, Item item, int count) {
-        long cost = Prices.price(item) * count;
+        long cost = Prices.buyPrice(item) * count;
         if (SmpMod.money(player) < cost) {
             player.sendSystemMessage(Component.literal("You need " + Prices.money(cost) + " for that!").withStyle(ChatFormatting.RED));
             return;
