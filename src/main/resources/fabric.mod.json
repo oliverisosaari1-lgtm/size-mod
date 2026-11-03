@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "sizemod",
+  "version": "${version}",
+  "name": "Size Mod",
+  "description": "Use /size <player> <1-20> to make players tiny or giant. 10 is normal size.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.iikka.sizemod.SizeMod"] },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
