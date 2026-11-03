@@ -1,4 +1,4 @@
-net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement
-net.minecraft.client.gui.screens.Screen
-net.minecraft.client.gui.components.Tooltip
-net.minecraft.client.gui.components.Button$Builder
+net.minecraft.client.gui.GuiGraphicsExtractor
+net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
+net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
+net.minecraft.client.gui.components.Button
