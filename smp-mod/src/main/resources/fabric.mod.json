@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "donutsmp",
+  "version": "${version}",
+  "name": "DonutSMP Mod",
+  "description": "Fan-made SMP features: money, /ah shop, /sell, /pay, /bal, /baltop, /rtp, /tpa, /home, /spawn, combat tag, /settings.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.iikka.smp.SmpMod"] },
+  "depends": {
+    "fabricloader": ">=0.20.0",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*",
+    "sodium": "*"
+  }
+}

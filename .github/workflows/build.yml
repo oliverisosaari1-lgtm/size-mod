@@ -1,6 +1,7 @@
-name: Build mod
+name: Build size mod
 on:
   push:
+    paths-ignore: ['smp-mod/**', '.github/workflows/smp.yml']
   workflow_dispatch:
 permissions:
   contents: write

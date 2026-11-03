@@ -1,0 +1,115 @@
+package com.iikka.smp;
+
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/** What every item costs. Items in SHOP can be bought in /ah. Anything else sells for DEFAULT_PRICE. */
+public class Prices {
+    public static final long DEFAULT_PRICE = 10;
+    public static final Map<Item, Long> SHOP = new LinkedHashMap<>();
+    private static final Map<Item, Long> SELL_ONLY = new LinkedHashMap<>();
+
+    static {
+        // Blocks
+        SHOP.put(Items.GRASS_BLOCK, 450L);
+        SHOP.put(Items.DIRT, 100L);
+        SHOP.put(Items.STONE, 150L);
+        SHOP.put(Items.COBBLESTONE, 100L);
+        SHOP.put(Items.OAK_LOG, 300L);
+        SHOP.put(Items.OAK_PLANKS, 100L);
+        SHOP.put(Items.SAND, 200L);
+        SHOP.put(Items.GLASS, 300L);
+        SHOP.put(Items.OBSIDIAN, 20_000L);
+        SHOP.put(Items.TNT, 10_000L);
+        SHOP.put(Items.TORCH, 50L);
+        SHOP.put(Items.SHULKER_BOX, 2_000_000L);
+        SHOP.put(Items.BEACON, 100_000_000L);
+        // Ores and gems
+        SHOP.put(Items.COAL, 1_000L);
+        SHOP.put(Items.IRON_INGOT, 5_000L);
+        SHOP.put(Items.GOLD_INGOT, 8_000L);
+        SHOP.put(Items.EMERALD, 30_000L);
+        SHOP.put(Items.DIAMOND, 50_000L);
+        SHOP.put(Items.NETHERITE_INGOT, 5_000_000L);
+        // Food
+        SHOP.put(Items.BREAD, 200L);
+        SHOP.put(Items.COOKED_BEEF, 500L);
+        SHOP.put(Items.GOLDEN_CARROT, 2_000L);
+        SHOP.put(Items.GOLDEN_APPLE, 100_000L);
+        SHOP.put(Items.ENCHANTED_GOLDEN_APPLE, 10_000_000L);
+        // Gear
+        SHOP.put(Items.DIAMOND_SWORD, 200_000L);
+        SHOP.put(Items.DIAMOND_PICKAXE, 250_000L);
+        SHOP.put(Items.DIAMOND_CHESTPLATE, 400_000L);
+        SHOP.put(Items.NETHERITE_SWORD, 20_000_000L);
+        SHOP.put(Items.BOW, 20_000L);
+        SHOP.put(Items.ARROW, 200L);
+        SHOP.put(Items.SHIELD, 15_000L);
+        SHOP.put(Items.TOTEM_OF_UNDYING, 25_000_000L);
+        SHOP.put(Items.ELYTRA, 500_000_000L);
+        SHOP.put(Items.FIREWORK_ROCKET, 5_000L);
+        // Other
+        SHOP.put(Items.ENDER_PEARL, 15_000L);
+        SHOP.put(Items.EXPERIENCE_BOTTLE, 2_000L);
+        SHOP.put(Items.BLAZE_ROD, 8_000L);
+        SHOP.put(Items.SLIME_BALL, 2_000L);
+        SHOP.put(Items.GUNPOWDER, 500L);
+        SHOP.put(Items.STRING, 150L);
+        SHOP.put(Items.BONE, 100L);
+
+        SELL_ONLY.put(Items.ROTTEN_FLESH, 20L);
+        SELL_ONLY.put(Items.WHEAT, 100L);
+        SELL_ONLY.put(Items.CARROT, 150L);
+        SELL_ONLY.put(Items.POTATO, 150L);
+        SELL_ONLY.put(Items.IRON_ORE, 4_000L);
+        SELL_ONLY.put(Items.DIAMOND_ORE, 45_000L);
+        SELL_ONLY.put(Items.DEEPSLATE_DIAMOND_ORE, 45_000L);
+        SELL_ONLY.put(Items.ANCIENT_DEBRIS, 1_000_000L);
+    }
+
+    public static long price(Item item) {
+        Long p = SHOP.get(item);
+        if (p == null) p = SELL_ONLY.get(item);
+        return p == null ? DEFAULT_PRICE : p;
+    }
+
+    public static long price(ItemStack stack) {
+        return price(stack.getItem()) * stack.getCount();
+    }
+
+    /** 1234 -> "$1.2K", 500000000 -> "$500M" */
+    public static String money(long amount) {
+        String sign = amount < 0 ? "-" : "";
+        long a = Math.abs(amount);
+        if (a >= 1_000_000_000_000L) return sign + "$" + trim(a / 1e12) + "T";
+        if (a >= 1_000_000_000L) return sign + "$" + trim(a / 1e9) + "B";
+        if (a >= 1_000_000L) return sign + "$" + trim(a / 1e6) + "M";
+        if (a >= 1_000L) return sign + "$" + trim(a / 1e3) + "K";
+        return sign + "$" + a;
+    }
+
+    private static String trim(double v) {
+        String s = String.format(java.util.Locale.ROOT, "%.1f", v);
+        return s.endsWith(".0") ? s.substring(0, s.length() - 2) : s;
+    }
+
+    /** Reads "500", "1.5k", "2m", "1b". Returns -1 if it isn't a number. */
+    public static long parse(String text) {
+        try {
+            String t = text.trim().toLowerCase(java.util.Locale.ROOT).replace("$", "").replace(",", "");
+            double mult = 1;
+            if (t.endsWith("k")) { mult = 1e3; t = t.substring(0, t.length() - 1); }
+            else if (t.endsWith("m")) { mult = 1e6; t = t.substring(0, t.length() - 1); }
+            else if (t.endsWith("b")) { mult = 1e9; t = t.substring(0, t.length() - 1); }
+            double v = Double.parseDouble(t) * mult;
+            if (v < 1 || v > 1e15) return -1;
+            return (long) v;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+}
