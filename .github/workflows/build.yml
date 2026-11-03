@@ -18,9 +18,8 @@ jobs:
           MC=1.21.11
           LOADER=$(curl -s https://meta.fabricmc.net/v2/versions/loader | jq -r '[.[]|select(.stable)][0].version')
           API=$(curl -s https://api.modrinth.com/v2/project/fabric-api/version | jq -r --arg mc "$MC" '[.[]|select(.game_versions|index($mc))][0].version_number')
-          LOOM=$(curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -o '<version>[0-9.]*-SNAPSHOT</version>' | sed 's/<[^>]*>//g' | sort -V | tail -1)
-          echo "loader=$LOADER api=$API loom=$LOOM"
-          sed -i "s/^loader_version=.*/loader_version=$LOADER/; s/^fabric_version=.*/fabric_version=$API/; s/^loom_version=.*/loom_version=$LOOM/" gradle.properties
+          echo "loader=$LOADER api=$API"
+          sed -i "s/^loader_version=.*/loader_version=$LOADER/; s/^fabric_version=.*/fabric_version=$API/" gradle.properties
           cat gradle.properties
       - uses: gradle/actions/setup-gradle@v4
         with:
