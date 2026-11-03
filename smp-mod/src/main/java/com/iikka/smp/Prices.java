@@ -50,7 +50,9 @@ public class Prices {
         SHOP.put(Items.DIAMOND_SWORD, 200_000L);
         SHOP.put(Items.DIAMOND_PICKAXE, 250_000L);
         SHOP.put(Items.DIAMOND_CHESTPLATE, 400_000L);
-        SHOP.put(Items.NETHERITE_SWORD, 20_000_000L);
+        SHOP.put(Items.NETHERITE_SWORD, 11_000_000L);
+        SHOP.put(Items.NETHERITE_AXE, 10_000_000L);
+        SHOP.put(Items.DRAGON_EGG, 100_000_000L);
         SHOP.put(Items.BOW, 20_000L);
         SHOP.put(Items.ARROW, 200L);
         SHOP.put(Items.SHIELD, 15_000L);
