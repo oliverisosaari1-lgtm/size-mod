@@ -132,8 +132,8 @@ public class ShopMenu extends ChestMenu {
         box.setItem(SEARCH, Gui.button(Items.ANVIL, "Search", ChatFormatting.WHITE,
             search == null || search.isBlank() ? "Click to search" : "Searching: " + search, "Click to search"));
         box.setItem(INFO, Gui.button(Items.OAK_SIGN, "Auction House", ChatFormatting.WHITE,
-            "Every item in the game is here!", "Left click: buy 1", "Right click: buy a stack", "Sell your own: /ah sell <price>"));
-        box.setItem(MINE, Gui.button(Items.CHEST, "Your Items", ChatFormatting.WHITE, "Click to view", "Sell: hold an item, /ah sell <price>"));
+            "Every item in the game is here!", "Left click: buy 1", "Right click: buy a stack", "Sell your own in Your Items"));
+        box.setItem(MINE, Gui.button(Items.CHEST, "Your Items", ChatFormatting.WHITE, "Click to view and sell items"));
     }
 
     @Override

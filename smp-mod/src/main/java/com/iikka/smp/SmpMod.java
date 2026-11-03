@@ -192,6 +192,9 @@ public class SmpMod implements ModInitializer {
             return InteractionResult.PASS;
         });
 
+        net.fabricmc.fabric.api.message.v1.ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, params) ->
+            !Listings.onChat(sender, message.signedContent()));
+
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> register(dispatcher));
     }
 

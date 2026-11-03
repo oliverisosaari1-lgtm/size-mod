@@ -41,7 +41,7 @@ public class YourItemsMenu extends ChestMenu {
         }
         box.setItem(BACK, Gui.button(Items.ARROW, "Back", ChatFormatting.WHITE, "Back to the Auction"));
         box.setItem(HELP, Gui.button(Items.BOOK, "How to sell", ChatFormatting.WHITE,
-            "Hold an item and type", "/ah sell <price>", "Example: /ah sell 10k",
+            "Click an item in your inventory", "then type the price in chat", "Example: 10k",
             "You have " + mine.size() + "/" + Listings.MAX_PER_PLAYER + " items listed"));
     }
 
@@ -55,8 +55,12 @@ public class YourItemsMenu extends ChestMenu {
             sendAllDataToRemote();
             return;
         }
-        if (type == ContainerInput.QUICK_MOVE) return;
-        super.clicked(slot, button, type, p);
+        // Clicking an item in your own inventory puts it up for sale
+        if (slot >= 54 && slot < slots.size() && type == ContainerInput.PICKUP) {
+            var s = slots.get(slot);
+            if (s.hasItem() && s.container == player.getInventory()) { Listings.askPrice(player, s.getContainerSlot()); return; }
+        }
+        sendAllDataToRemote();
     }
 
     @Override
