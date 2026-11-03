@@ -1,4 +1,1 @@
-net.minecraft.client.gui.GuiGraphicsExtractor
-net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
-net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-net.minecraft.client.gui.components.Button
+net.minecraft.client.Minecraft
