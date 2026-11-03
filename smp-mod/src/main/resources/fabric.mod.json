@@ -22,7 +22,8 @@
     "minecraft": "~26.3",
     "java": ">=25",
     "fabric-api": "*",
-    "sodium": "*"
+    "sodium": "*",
+    "voicechat": "*"
   },
   "mixins": [
     "donutsmp.mixins.json"

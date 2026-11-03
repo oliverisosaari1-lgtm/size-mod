@@ -17,8 +17,34 @@ public class SmpClient implements ClientModInitializer {
     private static long money = 0;
     private static boolean show = true;
 
+    private static net.minecraft.client.KeyMapping zoomKey;
+
+    public static boolean zooming() {
+        return zoomKey != null && zoomKey.isDown() && Minecraft.getInstance().gui.screen() == null;
+    }
+
+    public static float zoomAmount() {
+        return Math.max(1, ClientConfig.INSTANCE.zoom);
+    }
+
     @Override
     public void onInitializeClient() {
+        var category = net.minecraft.client.KeyMapping.Category.register(Identifier.fromNamespaceAndPath("donutsmp", "keys"));
+        zoomKey = net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(
+            new net.minecraft.client.KeyMapping("key.donutsmp.zoom", com.mojang.blaze3d.platform.InputConstants.KEY_C, category));
+
+        // "DonutSMP" button on the main menu, under the other buttons
+        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+            if (!(screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;
+            var widgets = net.fabricmc.fabric.api.client.screen.v1.Screens.getWidgets(screen);
+            int bottom = h / 4 + 48;
+            for (var wd : widgets) {
+                if (wd.getWidth() >= 98 && Math.abs(wd.getX() + wd.getWidth() / 2 - w / 2) < 110) bottom = Math.max(bottom, wd.getY() + wd.getHeight());
+            }
+            widgets.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("DonutSMP"),
+                b -> client.gui.setScreen(new DonutSmpScreen(screen))).bounds(w / 2 - 100, bottom + 4, 200, 20).build());
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(MoneyPayload.TYPE, (payload, context) -> {
             money = payload.money();
             show = payload.show();
@@ -48,7 +74,7 @@ public class SmpClient implements ClientModInitializer {
 
         // "~$ 40" under the item name, like DonutSMP. Skipped for the mod's own menu buttons.
         ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> {
-            if (lines.isEmpty() || stack.isEmpty()) return;
+            if (!ClientConfig.INSTANCE.priceTooltips || lines.isEmpty() || stack.isEmpty()) return;
             var lore = stack.get(DataComponents.LORE);
             if (stack.get(DataComponents.CUSTOM_NAME) != null && lore != null && !lore.lines().isEmpty()) return; // menu buttons
             if (lore != null && !lore.lines().isEmpty() && lore.lines().get(0).getString().startsWith("~$")) return; // auction items
@@ -64,7 +90,7 @@ public class SmpClient implements ClientModInitializer {
                 Data.PlayerData pd = SmpMod.DATA.players.get(mc.player.getUUID().toString());
                 if (pd != null) { money = pd.money; show = pd.moneyHud; }
             }
-            if (!show) return;
+            if (!show || !ClientConfig.INSTANCE.moneyBox) return;
             var font = mc.font;
             String name = mc.player.getName().getString();
             String amount = Prices.shortNum(money);

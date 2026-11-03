@@ -47,10 +47,14 @@ jobs:
           SODIUM_URL=$(curl -sSf 'https://api.modrinth.com/v2/project/sodium/version?loaders=%5B%22fabric%22%5D' | jq -r --arg v "$SODIUM" '[.[].files[] | select(.primary and (.filename == "sodium-fabric-\($v).jar"))][0].url')
           echo "sodium: $SODIUM_URL"
           curl -sSfL -o "$SODIUM_JAR" "$SODIUM_URL"
+          VC_URL=$(curl -sSf 'https://api.modrinth.com/v2/project/simple-voice-chat/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%2226.3%22%5D' | jq -r '[.[0].files[] | select(.primary)][0].url')
+          VC_JAR=$(basename "$VC_URL")
+          echo "voicechat: $VC_URL"
+          curl -sSfL -o "$VC_JAR" "$VC_URL"
           DIR="zip/DonutSMP Mod 26.3"
           mkdir -p "$DIR/minecraft/mods"
           cp pack/* "$DIR/"
-          cp "$JAR" "$API_JAR" "$SODIUM_JAR" "$DIR/minecraft/mods/"
+          cp "$JAR" "$API_JAR" "$SODIUM_JAR" "$VC_JAR" "$DIR/minecraft/mods/"
           (cd zip && zip -qr ../DonutSMP-Mod-Prism-26.3.zip "DonutSMP Mod 26.3")
           gh release delete donutsmp -y --cleanup-tag || true
-          gh release create donutsmp DonutSMP-Mod-Prism-26.3.zip "$JAR" "$API_JAR" "$SODIUM_JAR" --title "DonutSMP Mod for Minecraft 26.3" --notes "Easiest: download DonutSMP-Mod-Prism-26.3.zip and import it in Prism (Add Instance, Import). Needs Fabric API and Sodium (both included)."
+          gh release create donutsmp DonutSMP-Mod-Prism-26.3.zip "$JAR" "$API_JAR" "$SODIUM_JAR" "$VC_JAR" --title "DonutSMP Mod for Minecraft 26.3" --notes "Easiest: download DonutSMP-Mod-Prism-26.3.zip and import it in Prism (Add Instance, Import). Needs Fabric API, Sodium and Simple Voice Chat (all included)."
