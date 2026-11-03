@@ -23,5 +23,8 @@
     "java": ">=25",
     "fabric-api": "*",
     "sodium": "*"
-  }
+  },
+  "mixins": [
+    "donutsmp.mixins.json"
+  ]
 }

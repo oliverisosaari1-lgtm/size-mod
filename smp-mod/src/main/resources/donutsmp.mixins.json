@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.iikka.smp.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["TitleBackgroundMixin"],
+  "injectors": { "defaultRequire": 1 }
+}
