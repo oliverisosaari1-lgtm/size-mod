@@ -44,14 +44,14 @@ public class HomesScreen extends Screen {
         int y = height / 5;
         for (int i = 0; i < shown; i++) {
             String[] h = homes.get(start + i);
-            addRenderableWidget(Button.builder(Component.literal("   " + h[0]), b -> minecraft.setScreen(new HomeScreen(h[0], h[1])))
+            addRenderableWidget(Button.builder(Component.literal("   " + h[0]), b -> minecraft.gui.setScreen(new HomeScreen(h[0], h[1])))
                 .bounds(x, y, bw, 20).build());
             icons.add(new Object[]{icon(h[1]), x + 4, y + 2});
             x += bw + gap;
         }
         if (more) {
             int next = (start + PER_PAGE < homes.size()) ? page + 1 : 0;
-            addRenderableWidget(Button.builder(Component.literal("Show More"), b -> minecraft.setScreen(new HomesScreen(homes, next)))
+            addRenderableWidget(Button.builder(Component.literal("Show More"), b -> minecraft.gui.setScreen(new HomesScreen(homes, next)))
                 .bounds(x, y, bw, 20).build());
         }
     }

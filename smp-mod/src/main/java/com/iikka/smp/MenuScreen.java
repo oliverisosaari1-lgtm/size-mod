@@ -30,7 +30,7 @@ public class MenuScreen extends Screen {
 
     private void add(String[] b, int x, int y, int w, int h) {
         addRenderableWidget(Button.builder(Component.literal(b[0]), btn -> {
-            if (b[1].startsWith(">")) minecraft.setScreen(new ChatScreen(b[1].substring(1), false));
+            if (b[1].startsWith(">")) minecraft.gui.setScreen(new ChatScreen(b[1].substring(1), false));
             else SmpClient.command(b[1]);
         }).bounds(x, y, w, h).build());
     }

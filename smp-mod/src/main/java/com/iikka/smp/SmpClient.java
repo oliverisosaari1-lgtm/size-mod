@@ -27,8 +27,8 @@ public class SmpClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ScreenPayload.TYPE, (payload, context) -> {
             Minecraft mc = Minecraft.getInstance();
             switch (payload.screen()) {
-                case "menu" -> mc.setScreen(new MenuScreen());
-                case "chat" -> mc.setScreen(new ChatScreen(payload.data(), false));
+                case "menu" -> mc.gui.setScreen(new MenuScreen());
+                case "chat" -> mc.gui.setScreen(new ChatScreen(payload.data(), false));
                 case "homes" -> {
                     List<String[]> homes = new ArrayList<>();
                     for (String line : payload.data().split("\n")) {
@@ -36,11 +36,11 @@ public class SmpClient implements ClientModInitializer {
                         String[] parts = line.split("\\|", 2);
                         homes.add(new String[]{parts[0], parts.length > 1 ? parts[1] : "white_bed"});
                     }
-                    mc.setScreen(new HomesScreen(homes, 0));
+                    mc.gui.setScreen(new HomesScreen(homes, 0));
                 }
                 case "home" -> {
                     String[] parts = payload.data().split("\\|", 2);
-                    mc.setScreen(new HomeScreen(parts[0], parts.length > 1 ? parts[1] : "white_bed"));
+                    mc.gui.setScreen(new HomeScreen(parts[0], parts.length > 1 ? parts[1] : "white_bed"));
                 }
                 default -> { }
             }
@@ -75,7 +75,7 @@ public class SmpClient implements ClientModInitializer {
     /** Runs a command as if the player typed it. */
     static void command(String cmd) {
         Minecraft mc = Minecraft.getInstance();
-        mc.setScreen(null);
+        mc.gui.setScreen(null);
         if (mc.player != null) mc.player.connection.sendCommand(cmd);
     }
 }

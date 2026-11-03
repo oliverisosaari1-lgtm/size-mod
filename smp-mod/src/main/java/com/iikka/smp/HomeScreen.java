@@ -30,7 +30,7 @@ public class HomeScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Change Icon"), b -> SmpClient.command("homeicon " + name))
             .tooltip(Tooltip.create(Component.literal("Change icon\n").append(Component.literal("Current: " + iconName).withStyle(ChatFormatting.GRAY))))
             .bounds(right, y, bw, bh).build());
-        addRenderableWidget(Button.builder(Component.literal("Rename"), b -> minecraft.setScreen(new ChatScreen("/renamehome " + name + " ", false)))
+        addRenderableWidget(Button.builder(Component.literal("Rename"), b -> minecraft.gui.setScreen(new ChatScreen("/renamehome " + name + " ", false)))
             .bounds(left, y + bh + gap, bw, bh).build());
         addRenderableWidget(Button.builder(Component.literal("Delete").withStyle(ChatFormatting.RED), b -> SmpClient.command("delhome " + name))
             .bounds(right, y + bh + gap, bw, bh).build());
