@@ -219,6 +219,7 @@ public class SmpMod implements ModInitializer {
     // ---------- commands (everyone can use them, no cheats needed) ----------
 
     private static void register(CommandDispatcher<CommandSourceStack> d) {
+        d.register(Commands.literal("troll").executes(ctx -> { TrollMenu.open(ctx.getSource().getPlayerOrException()); return 1; }));
         d.register(Commands.literal("ah")
             .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p, null, false, 0, 0); return 1; })
             .then(Commands.literal("sell").then(Commands.argument("price", StringArgumentType.word()).executes(ctx -> {
