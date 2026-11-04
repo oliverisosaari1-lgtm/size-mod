@@ -21,7 +21,7 @@ public class Arena {
 
     public static void build(ServerLevel level) {
         BlockState floor = Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState();
-        BlockState line = Blocks.RED_CONCRETE.defaultBlockState();
+        BlockState line = Blocks.CRIMSON_PLANKS.defaultBlockState();
         BlockState light = Blocks.SHROOMLIGHT.defaultBlockState();
         BlockState base = Blocks.OBSIDIAN.defaultBlockState();
         BlockState wall = Blocks.TINTED_GLASS.defaultBlockState();
