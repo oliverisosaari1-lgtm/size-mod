@@ -57,7 +57,8 @@ public class Prices {
         SHOP.put(Items.NETHERITE_CHESTPLATE, 15_000_000L);
         SHOP.put(Items.NETHERITE_LEGGINGS, 15_000_000L);
         SHOP.put(Items.NETHERITE_BOOTS, 15_000_000L);
-        SHOP.put(Items.DRAGON_EGG, 100_000_000L);
+        SELL_ONLY.put(Items.DRAGON_EGG, 100_000_000L); // can only be sold, not bought
+        SHOP.put(Items.KELP, 3_200L);
         SHOP.put(Items.BOW, 20_000L);
         SHOP.put(Items.ARROW, 200L);
         SHOP.put(Items.SHIELD, 15_000L);
@@ -91,7 +92,45 @@ public class Prices {
     private static boolean hidden(String id) {
         return id.equals("air") || id.contains("command_block") || id.equals("barrier") || id.startsWith("structure_")
             || id.equals("jigsaw") || id.equals("debug_stick") || id.equals("knowledge_book") || id.equals("light")
-            || id.startsWith("test_");
+            || id.startsWith("test_") || id.equals("dragon_egg") || id.equals("enchanted_book");
+    }
+
+    /** Enchanted book worth: 25K x level x level (Sharpness V = 625K), Mending 1M. */
+    public static long bookPrice(ItemStack book) {
+        net.minecraft.world.item.enchantment.ItemEnchantments ench = book.get(DataComponents.STORED_ENCHANTMENTS);
+        if (ench == null || ench.isEmpty()) return DEFAULT_PRICE;
+        long total = 0;
+        for (var e : ench.entrySet()) {
+            String id = e.getKey().unwrapKey().map(k -> k.identifier().getPath()).orElse("");
+            int lvl = e.getIntValue();
+            total += id.equals("mending") ? 1_000_000L : 25_000L * lvl * lvl;
+        }
+        return total;
+    }
+
+    /** Names of the enchantments on a book, like "sharpness", for /ah search. */
+    public static String bookNames(ItemStack book) {
+        net.minecraft.world.item.enchantment.ItemEnchantments ench = book.get(DataComponents.STORED_ENCHANTMENTS);
+        if (ench == null) return "";
+        StringBuilder b = new StringBuilder();
+        for (var e : ench.entrySet()) b.append(e.getKey().unwrapKey().map(k -> k.identifier().getPath()).orElse("")).append(' ');
+        return b.toString();
+    }
+
+    private static List<ItemStack> books;
+
+    /** One enchanted book for every enchantment at every level. */
+    public static List<ItemStack> allBooks(net.minecraft.server.MinecraftServer server) {
+        if (books != null) return books;
+        books = new ArrayList<>();
+        var reg = server.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        reg.listElements().forEach(h -> {
+            for (int lvl = 1; lvl <= h.value().getMaxLevel(); lvl++) {
+                books.add(net.minecraft.world.item.enchantment.EnchantmentHelper.createBook(
+                    new net.minecraft.world.item.enchantment.EnchantmentInstance(h, lvl)));
+            }
+        });
+        return books;
     }
 
     private static List<Item> all;
@@ -129,6 +168,7 @@ public class Prices {
     }
 
     public static long price(ItemStack stack) {
+        if (stack.is(Items.ENCHANTED_BOOK)) return bookPrice(stack) * stack.getCount();
         return price(stack.getItem()) * stack.getCount();
     }
 

@@ -59,6 +59,7 @@ public class ShopMenu extends ChestMenu {
     }
 
     private static long priceOf(Object o) {
+        if (o instanceof ItemStack book) return Prices.bookPrice(book);
         return o instanceof Data.Listing l ? l.price : Prices.buyPrice((Item) o);
     }
 
@@ -82,6 +83,11 @@ public class ShopMenu extends ChestMenu {
         java.util.Map.entry("tnt", "tnt"), java.util.Map.entry("spawner", "spawner"), java.util.Map.entry("elytra", "elytra"));
 
     private static boolean matches(String q, ItemStack stack) {
+        if (stack.is(Items.ENCHANTED_BOOK)) {
+            String names = Prices.bookNames(stack);
+            if (q.contains("book") || q.contains("ench")) return true;
+            if (names.contains(q.replace(' ', '_'))) return true;
+        }
         String alias = ALIASES.get(q);
         if (alias != null) return BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath().contains(alias);
         return stack.getHoverName().getString().toLowerCase(Locale.ROOT).contains(q)
@@ -100,6 +106,11 @@ public class ShopMenu extends ChestMenu {
         List<Object> game = new ArrayList<>();
         for (Item item : quick ? new ArrayList<>(Prices.SHOP.keySet()) : Prices.allItems()) {
             if (q == null || matches(q, new ItemStack(item))) game.add(item);
+        }
+        if (!quick) {
+            for (ItemStack book : Prices.allBooks(SmpMod.server())) {
+                if (q == null || matches(q, book)) game.add(book);
+            }
         }
         if (mode == 0) { players.sort(Comparator.comparingLong(ShopMenu::priceOf)); game.sort(Comparator.comparingLong(ShopMenu::priceOf)); }
         else if (mode == 1) { players.sort(Comparator.comparingLong(ShopMenu::priceOf).reversed()); game.sort(Comparator.comparingLong(ShopMenu::priceOf).reversed()); }
@@ -130,6 +141,13 @@ public class ShopMenu extends ChestMenu {
             if (idx >= items.size()) break;
             if (items.get(idx) instanceof Data.Listing l) {
                 box.setItem(i, Listings.display(SmpMod.server(), l, "Click to buy"));
+                continue;
+            }
+            if (items.get(idx) instanceof ItemStack book) {
+                List<Component> lore = new ArrayList<>();
+                lore.add(Prices.priceLine(Prices.bookPrice(book)));
+                lore.add(Gui.text("Click to buy", ChatFormatting.GRAY));
+                box.setItem(i, Gui.withLore(book.copy(), null, lore));
                 continue;
             }
             Item item = (Item) items.get(idx);
@@ -180,6 +198,18 @@ public class ShopMenu extends ChestMenu {
                     if (o instanceof Data.Listing l) {
                         Listings.buy(player, l);
                         refresh(player, search, quick, mode, page);
+                        return;
+                    }
+                    if (o instanceof ItemStack book) {
+                        long cost = Prices.bookPrice(book);
+                        if (SmpMod.money(player) < cost) {
+                            player.sendSystemMessage(Component.literal("You need " + Prices.money(cost) + " for that!").withStyle(ChatFormatting.RED));
+                        } else {
+                            SmpMod.addMoney(player, -cost);
+                            Gui.give(player, book.copy());
+                            player.sendSystemMessage(Component.literal("Bought an enchanted book for " + Prices.money(cost)).withStyle(ChatFormatting.GREEN));
+                        }
+                        sendAllDataToRemote();
                         return;
                     }
                     Item item = (Item) o;
