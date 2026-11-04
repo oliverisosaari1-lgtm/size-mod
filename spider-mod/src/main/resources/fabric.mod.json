@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "spiderman",
+  "version": "${version}",
+  "name": "Spider-Man Mod",
+  "description": "Press F to shoot a web where you're looking and swing there.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.iikka.spider.SpiderMod"],
+    "client": ["com.iikka.spider.SpiderClient"]
+  },
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "java": ">=21", "fabric-api": "*" }
+}
