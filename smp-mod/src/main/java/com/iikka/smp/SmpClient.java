@@ -27,8 +27,26 @@ public class SmpClient implements ClientModInitializer {
         return Math.max(1, ClientConfig.INSTANCE.zoom);
     }
 
+    /** The first time the game starts with this mod: VSync off, Quake Pro FOV, unlimited FPS, GUI scale 3, distances 7. */
+    private static void applyGameSettings(Minecraft mc) {
+        ClientConfig c = ClientConfig.INSTANCE;
+        if (c.appliedGameSettings) return;
+        var o = mc.options;
+        o.enableVsync().set(false);
+        o.fov().set(110);            // Quake Pro
+        o.framerateLimit().set(260); // 260 = Unlimited
+        o.guiScale().set(3);
+        o.renderDistance().set(7);
+        o.simulationDistance().set(7);
+        o.save();
+        mc.resizeGui();
+        c.appliedGameSettings = true;
+        c.save();
+    }
+
     @Override
     public void onInitializeClient() {
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED.register(SmpClient::applyGameSettings);
         var category = net.minecraft.client.KeyMapping.Category.register(Identifier.fromNamespaceAndPath("donutsmp", "keys"));
         zoomKey = net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(
             new net.minecraft.client.KeyMapping("key.donutsmp.zoom", com.mojang.blaze3d.platform.InputConstants.KEY_C, category));

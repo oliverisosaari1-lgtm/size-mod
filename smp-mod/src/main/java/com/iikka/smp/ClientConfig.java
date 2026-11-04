@@ -12,6 +12,7 @@ public class ClientConfig {
     public boolean moneyBox = true;
     public boolean priceTooltips = true;
     public int zoom = 4;
+    public boolean appliedGameSettings = false;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("donutsmp-client.json");
