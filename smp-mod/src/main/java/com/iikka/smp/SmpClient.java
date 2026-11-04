@@ -19,12 +19,25 @@ public class SmpClient implements ClientModInitializer {
 
     private static net.minecraft.client.KeyMapping zoomKey;
 
+    private static float currentZoom = 4;
+    private static boolean wasZooming = false;
+
     public static boolean zooming() {
-        return zoomKey != null && zoomKey.isDown() && Minecraft.getInstance().gui.screen() == null;
+        boolean z = zoomKey != null && zoomKey.isDown() && Minecraft.getInstance().gui.screen() == null;
+        if (z && !wasZooming) currentZoom = Math.max(1, ClientConfig.INSTANCE.zoom); // start from the zoom in settings
+        wasZooming = z;
+        return z;
     }
 
     public static float zoomAmount() {
-        return Math.max(1, ClientConfig.INSTANCE.zoom);
+        return currentZoom;
+    }
+
+    /** Scroll up = zoom in more, scroll down = zoom out. Between 1.5x and 50x. */
+    public static void scrollZoom(double amount) {
+        if (amount == 0) return;
+        currentZoom *= amount > 0 ? 1.2f : 1 / 1.2f;
+        currentZoom = Math.max(1.5f, Math.min(50f, currentZoom));
     }
 
     /** The first time the game starts with this mod: VSync off, Quake Pro FOV, unlimited FPS, GUI scale 3, distances 7. */

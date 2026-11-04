@@ -21,13 +21,19 @@ jobs:
         with:
           gradle-version: current
       - run: gradle build --stacktrace
+      - name: Light blue inventory and chest textures
+        run: |
+          JAR=$(find ~/.gradle/caches -name 'minecraft-merged*.jar' | grep -v sources | head -1)
+          rm -rf /tmp/mc && mkdir -p /tmp/mc && cd /tmp/mc && unzip -q "$JAR" 'assets/minecraft/textures/gui/container/*'
+          pip install --quiet pillow
+          python3 "$GITHUB_WORKSPACE/smp-mod/tint_gui.py" /tmp/mc/assets/minecraft/textures/gui/container "$GITHUB_WORKSPACE/smp-mod/src/main/resources/assets/minecraft/textures/gui/container"
+          cd "$GITHUB_WORKSPACE/smp-mod" && gradle build
       - name: Check mixin targets exist
         run: |
           JAR=$(find ~/.gradle/caches -name 'minecraft-merged*.jar' | grep -v sources | head -1)
           javap -p -cp "$JAR" net.minecraft.client.Camera | grep -q 'float calculateFov(float)' && echo "Camera.calculateFov OK"
           javap -p -cp "$JAR" net.minecraft.client.gui.screens.Screen | grep -q 'extractPanorama' && echo "Screen.extractPanorama OK"
-          javap -p -cp "$JAR" net.minecraft.client.MouseHandler | grep -i scroll || true
-          javap -p -cp "$JAR" net.minecraft.world.entity.player.Inventory | grep -iE 'selected|setSelected' || true
+          javap -p -cp "$JAR" net.minecraft.client.MouseHandler | grep -q 'void onScroll(long, double, double)' && echo "MouseHandler.onScroll OK"
       - name: Show Minecraft API (debug)
         if: failure()
         run: |
