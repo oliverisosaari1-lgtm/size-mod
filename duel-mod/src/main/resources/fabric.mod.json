@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "duelmod",
+  "version": "${version}",
+  "name": "Duel Mod",
+  "description": "/duel a friend: you both go to the arena with the mace kit. Your own stuff comes back after.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.iikka.duel.DuelMod"] },
+  "depends": { "fabricloader": ">=0.20.0", "minecraft": "~26.3", "java": ">=25", "fabric-api": "*" }
+}
