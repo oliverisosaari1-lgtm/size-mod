@@ -60,6 +60,12 @@ public class SmpClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        // Light blue inventory and chests, always on
+        net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("donutsmp").ifPresent(mod ->
+            net.fabricmc.fabric.api.resource.v1.ResourceLoader.registerBuiltinPack(
+                Identifier.fromNamespaceAndPath("donutsmp", "lightblue"), "resourcepacks/lightblue", mod,
+                net.minecraft.network.chat.Component.literal("DonutSMP Light Blue"),
+                net.fabricmc.fabric.api.resource.v1.pack.PackActivationType.ALWAYS_ENABLED));
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED.register(SmpClient::applyGameSettings);
         var category = net.minecraft.client.KeyMapping.Category.register(Identifier.fromNamespaceAndPath("donutsmp", "keys"));
         zoomKey = net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(

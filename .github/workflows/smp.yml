@@ -27,7 +27,10 @@ jobs:
           unzip -l "$JAR" | grep -iE 'inventory|generic_54|container' | grep png | head -40
           rm -rf /tmp/mc && mkdir -p /tmp/mc && cd /tmp/mc && unzip -q "$JAR" 'assets/minecraft/textures/gui/container/*'
           pip install --quiet pillow
-          python3 "$GITHUB_WORKSPACE/smp-mod/tint_gui.py" /tmp/mc/assets/minecraft/textures/gui/container "$GITHUB_WORKSPACE/smp-mod/src/main/resources/assets/minecraft/textures/gui/container"
+          unzip -q -o "$JAR" version.json -d /tmp/mc
+          PACK="$GITHUB_WORKSPACE/smp-mod/src/main/resources/resourcepacks/lightblue"
+          python3 "$GITHUB_WORKSPACE/smp-mod/tint_gui.py" /tmp/mc/assets/minecraft/textures/gui/container "$PACK/assets/minecraft/textures/gui/container" /tmp/mc/version.json "$PACK/pack.mcmeta"
+          cat "$PACK/pack.mcmeta"
           cd "$GITHUB_WORKSPACE/smp-mod" && gradle build
       - name: Check mixin targets exist
         run: |

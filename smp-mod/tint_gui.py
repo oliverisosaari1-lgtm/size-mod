@@ -19,3 +19,17 @@ for root, _, files in os.walk(src):
         out = os.path.join(dst, os.path.relpath(root, src))
         os.makedirs(out, exist_ok=True)
         im.save(os.path.join(out, f))
+
+# pack.mcmeta for this Minecraft version, so the game accepts the pack
+if len(sys.argv) > 4:
+    import json
+    v = json.load(open(sys.argv[3]))
+    pv = v.get("pack_version", {})
+    fmt = pv.get("resource_major", pv.get("resource")) if isinstance(pv, dict) else pv
+    if isinstance(fmt, dict):
+        fmt = fmt.get("major", fmt)
+    minor = pv.get("resource_minor", 0) if isinstance(pv, dict) else 0
+    meta = {"pack": {"description": "DonutSMP light blue menus",
+                     "min_format": [fmt, minor] if minor else fmt,
+                     "max_format": [fmt, minor] if minor else fmt}}
+    json.dump(meta, open(sys.argv[4], "w"), indent=2)
