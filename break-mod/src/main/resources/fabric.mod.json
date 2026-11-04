@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "breakanything",
+  "version": "${version}",
+  "name": "Break Anything",
+  "description": "Break everything except air: water, lava, bedrock, portals... and get it as a block you can place.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.iikka.breakany.BreakMod"] },
+  "mixins": ["breakanything.mixins.json"],
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "java": ">=21", "fabric-api": "*" }
+}

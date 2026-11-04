@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.iikka.breakany.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["BlockStateMixin"],
+  "injectors": { "defaultRequire": 1 }
+}
