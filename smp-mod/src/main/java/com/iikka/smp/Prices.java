@@ -64,6 +64,10 @@ public class Prices {
         SHOP.put(Items.TOTEM_OF_UNDYING, 25_000_000L);
         SHOP.put(Items.ELYTRA, 500_000_000L);
         SHOP.put(Items.FIREWORK_ROCKET, 5_000L);
+        for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+            String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it).getPath();
+            if (id.endsWith("_boat") || id.endsWith("_raft")) SHOP.put(it, 1_200L); // every boat $1.2K
+        }
         // Other
         SHOP.put(Items.ENDER_PEARL, 15_000L);
         SHOP.put(Items.EXPERIENCE_BOTTLE, 2_000L);
