@@ -62,7 +62,28 @@ public class ShopMenu extends ChestMenu {
         return o instanceof Data.Listing l ? l.price : Prices.buyPrice((Item) o);
     }
 
+    /** Short names people type on DonutSMP, like /ah gap */
+    private static final java.util.Map<String, String> ALIASES = java.util.Map.ofEntries(
+        java.util.Map.entry("gap", "golden_apple"), java.util.Map.entry("gapple", "golden_apple"),
+        java.util.Map.entry("egap", "enchanted_golden_apple"), java.util.Map.entry("god apple", "enchanted_golden_apple"),
+        java.util.Map.entry("notch apple", "enchanted_golden_apple"),
+        java.util.Map.entry("echest", "ender_chest"), java.util.Map.entry("ec", "ender_chest"),
+        java.util.Map.entry("pearl", "ender_pearl"), java.util.Map.entry("pearls", "ender_pearl"),
+        java.util.Map.entry("xp", "experience_bottle"), java.util.Map.entry("exp", "experience_bottle"), java.util.Map.entry("xp bottle", "experience_bottle"),
+        java.util.Map.entry("totem", "totem_of_undying"), java.util.Map.entry("totems", "totem_of_undying"),
+        java.util.Map.entry("shulker", "shulker_box"), java.util.Map.entry("shulkers", "shulker_box"),
+        java.util.Map.entry("crystal", "end_crystal"), java.util.Map.entry("crystals", "end_crystal"),
+        java.util.Map.entry("anchor", "respawn_anchor"), java.util.Map.entry("obby", "obsidian"), java.util.Map.entry("obi", "obsidian"),
+        java.util.Map.entry("cobble", "cobblestone"), java.util.Map.entry("ench table", "enchanting_table"),
+        java.util.Map.entry("pick", "pickaxe"), java.util.Map.entry("netherite", "netherite"),
+        java.util.Map.entry("rockets", "firework_rocket"), java.util.Map.entry("fireworks", "firework_rocket"),
+        java.util.Map.entry("bottle", "experience_bottle"), java.util.Map.entry("steak", "cooked_beef"),
+        java.util.Map.entry("carrots", "golden_carrot"), java.util.Map.entry("gcarrot", "golden_carrot"),
+        java.util.Map.entry("tnt", "tnt"), java.util.Map.entry("spawner", "spawner"), java.util.Map.entry("elytra", "elytra"));
+
     private static boolean matches(String q, ItemStack stack) {
+        String alias = ALIASES.get(q);
+        if (alias != null) return BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath().contains(alias);
         return stack.getHoverName().getString().toLowerCase(Locale.ROOT).contains(q)
             || BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath().contains(q.replace(' ', '_'));
     }

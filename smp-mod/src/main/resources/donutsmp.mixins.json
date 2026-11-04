@@ -2,6 +2,15 @@
   "required": true,
   "package": "com.iikka.smp.mixin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["TitleBackgroundMixin", "ZoomMixin", "ZoomScrollMixin"],
-  "injectors": { "defaultRequire": 1 }
+  "client": [
+    "TitleBackgroundMixin",
+    "ZoomMixin",
+    "ZoomScrollMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "PacketPriceMixin"
+  ]
 }

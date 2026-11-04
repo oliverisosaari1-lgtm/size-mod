@@ -80,6 +80,8 @@ public class SmpMod implements ModInitializer {
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             if (ServerPlayNetworking.canSend(p, MoneyPayload.TYPE)) {
                 ServerPlayNetworking.send(p, new MoneyPayload(money(p), data(p).moneyHud, data(p).shards));
+            } else {
+                VanillaView.updateSidebar(p, data(p)); // player without the mod: show it on the sidebar
             }
         }
     }
@@ -162,7 +164,7 @@ public class SmpMod implements ModInitializer {
             server = null;
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> s.execute(SmpMod::updateSidebar));
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> save());
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> { VanillaView.forget(handler.player.getUUID()); save(); });
 
         ServerTickEvents.END_SERVER_TICK.register(s -> {
             tick++;

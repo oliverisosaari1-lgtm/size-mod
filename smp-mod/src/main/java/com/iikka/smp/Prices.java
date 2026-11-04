@@ -28,7 +28,7 @@ public class Prices {
         SHOP.put(Items.OAK_PLANKS, 100L);
         SHOP.put(Items.SAND, 200L);
         SHOP.put(Items.GLASS, 300L);
-        SHOP.put(Items.OBSIDIAN, 20_000L);
+        SHOP.put(Items.OBSIDIAN, 1_100L);
         SHOP.put(Items.TNT, 10_000L);
         SHOP.put(Items.TORCH, 50L);
         SHOP.put(Items.SHULKER_BOX, 2_000_000L);
