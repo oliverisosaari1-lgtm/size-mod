@@ -26,6 +26,8 @@ jobs:
           JAR=$(find ~/.gradle/caches -name 'minecraft-merged*.jar' | grep -v sources | head -1)
           javap -p -cp "$JAR" net.minecraft.client.Camera | grep -q 'float calculateFov(float)' && echo "Camera.calculateFov OK"
           javap -p -cp "$JAR" net.minecraft.client.gui.screens.Screen | grep -q 'extractPanorama' && echo "Screen.extractPanorama OK"
+          javap -p -cp "$JAR" net.minecraft.client.MouseHandler | grep -i scroll || true
+          javap -p -cp "$JAR" net.minecraft.world.entity.player.Inventory | grep -iE 'selected|setSelected' || true
       - name: Show Minecraft API (debug)
         if: failure()
         run: |
