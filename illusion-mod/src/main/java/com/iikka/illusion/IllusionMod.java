@@ -9,7 +9,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec3;
 
@@ -23,8 +25,8 @@ public class IllusionMod implements ModInitializer {
 
     /** An arrow in the air with an illusion on it. */
     private static class Flying {
-        final AbstractArrow arrow; final Illusion illusion; int age = 0; Vec3 last; int still = 0;
-        Flying(AbstractArrow a, Illusion i) { arrow = a; illusion = i; last = a.position(); }
+        final Entity arrow; final Illusion illusion; int age = 0; Vec3 last; int still = 0;
+        Flying(Entity a, Illusion i) { arrow = a; illusion = i; last = a.position(); }
     }
     private static final List<Flying> flying = new ArrayList<>();
 
@@ -64,9 +66,11 @@ public class IllusionMod implements ModInitializer {
 
         // A new arrow (or trident) shot by a player with an illusion
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
-            if (entity instanceof AbstractArrow a && a.getOwner() instanceof ServerPlayer p && a.tickCount < 2) {
+            String id = EntityType.getKey(entity.getType()).getPath();
+            boolean arrow = id.equals("arrow") || id.equals("spectral_arrow") || id.equals("trident");
+            if (arrow && entity instanceof TraceableEntity t && t.getOwner() instanceof ServerPlayer p && entity.tickCount < 2) {
                 Illusion il = get(p);
-                if (il != null) flying.add(new Flying(a, il));
+                if (il != null) flying.add(new Flying(entity, il));
             }
         });
 
