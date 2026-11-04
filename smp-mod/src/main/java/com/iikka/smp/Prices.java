@@ -59,6 +59,7 @@ public class Prices {
         SHOP.put(Items.NETHERITE_BOOTS, 15_000_000L);
         SELL_ONLY.put(Items.DRAGON_EGG, 100_000_000L); // can only be sold, not bought
         SHOP.put(Items.KELP, 3_200L);
+        SHOP.put(Items.DIAMOND_BLOCK, 100_000L);
         SHOP.put(Items.BOW, 20_000L);
         SHOP.put(Items.ARROW, 200L);
         SHOP.put(Items.SHIELD, 15_000L);
