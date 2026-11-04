@@ -1,8 +1,5 @@
-net.minecraft.world.entity.EntityType
-net.minecraft.world.entity.EntitySpawnReason
-net.minecraft.world.entity.LightningBolt
-net.minecraft.world.entity.item.FallingBlockEntity
-net.minecraft.world.scores.Scoreboard
-net.minecraft.world.scores.PlayerTeam
-net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket
-net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket
+net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
+net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
+net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket
+net.minecraft.world.entity.player.Inventory
+net.minecraft.sounds.SoundEvents

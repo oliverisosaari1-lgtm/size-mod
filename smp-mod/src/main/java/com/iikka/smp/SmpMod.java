@@ -168,6 +168,7 @@ public class SmpMod implements ModInitializer {
 
         ServerTickEvents.END_SERVER_TICK.register(s -> {
             tick++;
+            TrollMenu.tick();
             if (tick % (20 * 60 * 5) == 0) save();
             if (tick % 40 == 0) updateSidebar(); // keep the money box up to date
             // One shard for every 2 hours played
