@@ -35,6 +35,9 @@ jobs:
           javap -p -cp "$JAR" net.minecraft.client.Camera | grep -q 'float calculateFov(float)' && echo "Camera.calculateFov OK"
           javap -p -cp "$JAR" net.minecraft.client.gui.screens.Screen | grep -q 'extractPanorama' && echo "Screen.extractPanorama OK"
           javap -p -cp "$JAR" net.minecraft.client.MouseHandler | grep -q 'void onScroll(long, double, double)' && echo "MouseHandler.onScroll OK"
+          CP="$JAR:$(find ~/.gradle/caches -name 'fabric-*.jar' | grep -v sources | tr '\n' ':')"
+          javap -cp "$CP" net.fabricmc.fabric.api.resource.v1.ResourceLoader 2>&1 | grep -i builtin || true
+          javap -cp "$CP" net.fabricmc.fabric.api.resource.v1.pack.PackActivationType 2>&1 | head -8 || true
       - name: Show Minecraft API (debug)
         if: failure()
         run: |
