@@ -92,7 +92,7 @@ public class Prices {
     private static boolean hidden(String id) {
         return id.equals("air") || id.contains("command_block") || id.equals("barrier") || id.startsWith("structure_")
             || id.equals("jigsaw") || id.equals("debug_stick") || id.equals("knowledge_book") || id.equals("light")
-            || id.startsWith("test_") || id.equals("dragon_egg") || id.equals("enchanted_book");
+            || id.startsWith("test_") || id.equals("dragon_egg") || id.equals("enchanted_book") || id.equals("end_portal_frame");
     }
 
     /** Enchanted book worth: 25K x level x level (Sharpness V = 625K), Mending 1M. */
