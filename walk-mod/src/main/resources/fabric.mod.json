@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "walkgen",
+  "version": "${version}",
+  "name": "Walking Generates World",
+  "description": "The world is empty. Terrain only appears where you walk.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.iikka.walk.WalkMod"] },
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "java": ">=21", "fabric-api": "*" }
+}
