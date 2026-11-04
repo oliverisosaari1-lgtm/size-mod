@@ -52,6 +52,11 @@ public class Prices {
         SHOP.put(Items.DIAMOND_CHESTPLATE, 400_000L);
         SHOP.put(Items.NETHERITE_SWORD, 11_000_000L);
         SHOP.put(Items.NETHERITE_AXE, 10_000_000L);
+        SHOP.put(Items.NETHERITE_PICKAXE, 10_000_000L);
+        SHOP.put(Items.NETHERITE_HELMET, 15_000_000L);
+        SHOP.put(Items.NETHERITE_CHESTPLATE, 15_000_000L);
+        SHOP.put(Items.NETHERITE_LEGGINGS, 15_000_000L);
+        SHOP.put(Items.NETHERITE_BOOTS, 15_000_000L);
         SHOP.put(Items.DRAGON_EGG, 100_000_000L);
         SHOP.put(Items.BOW, 20_000L);
         SHOP.put(Items.ARROW, 200L);
