@@ -19,8 +19,18 @@ public class Listings {
     public static final int MAX_PER_PLAYER = 14;
 
     public static String save(MinecraftServer server, ItemStack stack) {
+        if (stack.isEmpty()) return "{}";
         var ops = server.registryAccess().createSerializationContext(JsonOps.INSTANCE);
         return ItemStack.CODEC.encodeStart(ops, stack).getOrThrow().toString();
+    }
+
+    public static ItemStack loadItem(MinecraftServer server, String json) {
+        try {
+            var ops = server.registryAccess().createSerializationContext(JsonOps.INSTANCE);
+            return ItemStack.CODEC.parse(ops, JsonParser.parseString(json)).result().orElse(ItemStack.EMPTY);
+        } catch (Exception e) {
+            return ItemStack.EMPTY;
+        }
     }
 
     public static ItemStack load(MinecraftServer server, Data.Listing l) {

@@ -104,7 +104,7 @@ public class SmpMod implements ModInitializer {
 
     // ---------- helpers ----------
 
-    private static void say(ServerPlayer p, String text, ChatFormatting color) {
+    static void say(ServerPlayer p, String text, ChatFormatting color) {
         p.sendSystemMessage(Component.literal(text).withStyle(color));
     }
 
@@ -116,6 +116,10 @@ public class SmpMod implements ModInitializer {
     /** Returns the player running the command, or null (and a message) if they can't use commands right now. */
     private static ServerPlayer player(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer p = ctx.getSource().getPlayerOrException();
+        if (Duels.inDuel(p)) {
+            say(p, "You can't use commands in a duel!", ChatFormatting.RED);
+            return null;
+        }
         if (inCombat(p)) {
             long secs = (combatUntil.get(p.getUUID()) - tick + 19) / 20;
             say(p, "You're in combat! Wait " + secs + "s before using commands.", ChatFormatting.RED);
@@ -124,11 +128,11 @@ public class SmpMod implements ModInitializer {
         return p;
     }
 
-    private static void teleport(ServerPlayer p, ServerLevel level, double x, double y, double z, float yaw, float pitch) {
+    static void teleport(ServerPlayer p, ServerLevel level, double x, double y, double z, float yaw, float pitch) {
         p.teleportTo(level, x, y, z, Set.of(), yaw, pitch, true);
     }
 
-    private static ServerLevel levelByName(String name) {
+    static ServerLevel levelByName(String name) {
         for (ServerLevel l : server.getAllLevels()) {
             if (l.dimension().toString().equals(name)) return l;
         }
@@ -163,8 +167,24 @@ public class SmpMod implements ModInitializer {
             save();
             server = null;
         });
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> s.execute(SmpMod::updateSidebar));
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> { VanillaView.forget(handler.player.getUUID()); save(); });
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> s.execute(() -> {
+            if (!Duels.inDuel(handler.player)) Duels.restore(handler.player); // left during a duel last time
+            updateSidebar();
+        }));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> {
+            VanillaView.forget(handler.player.getUUID());
+            if (Duels.inDuel(handler.player)) Duels.lose(handler.player.getUUID()); // leaving = losing
+            save();
+        });
+        // Dying in a duel: no real death, you just lose and get your stuff back. Totems still work.
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
+            if (!(entity instanceof ServerPlayer p) || !Duels.inDuel(p)) return true;
+            if (p.getMainHandItem().is(net.minecraft.world.item.Items.TOTEM_OF_UNDYING)
+                || p.getOffhandItem().is(net.minecraft.world.item.Items.TOTEM_OF_UNDYING)) return true;
+            p.setHealth(p.getMaxHealth());
+            Duels.lose(p.getUUID());
+            return false;
+        });
 
         ServerTickEvents.END_SERVER_TICK.register(s -> {
             tick++;
@@ -207,10 +227,13 @@ public class SmpMod implements ModInitializer {
 
         // Nobody can break or place blocks in the lobby (except in creative)
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, be) ->
-            player.isCreative() || world != server.overworld() || !Lobby.inside(pos));
+            player.isCreative() || world != server.overworld() || (!Lobby.inside(pos) && !Arena.inside(pos)));
         net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
             if (!world.isClientSide() && !player.isCreative() && server != null && world == server.overworld()
                 && Lobby.inside(hit.getBlockPos()) && !player.getItemInHand(hand).isEmpty()) return InteractionResult.FAIL;
+            if (!world.isClientSide() && !player.isCreative() && server != null && world == server.overworld()
+                && Arena.inside(hit.getBlockPos()) && (player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BlockItem
+                    || player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BucketItem)) return InteractionResult.FAIL;
             return InteractionResult.PASS;
         });
 
@@ -220,6 +243,16 @@ public class SmpMod implements ModInitializer {
     // ---------- commands (everyone can use them, no cheats needed) ----------
 
     private static void register(CommandDispatcher<CommandSourceStack> d) {
+        d.register(Commands.literal("duel")
+            .then(Commands.literal("accept").executes(ctx -> { Duels.accept(ctx.getSource().getPlayerOrException()); return 1; }))
+            .then(Commands.literal("deny").executes(ctx -> { Duels.deny(ctx.getSource().getPlayerOrException()); return 1; }))
+            .then(Commands.argument("player", EntityArgument.player())
+                .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) Duels.challenge(p, EntityArgument.getPlayer(ctx, "player"), 0); return 1; })
+                .then(Commands.argument("bet", StringArgumentType.word()).executes(ctx -> {
+                    ServerPlayer p = player(ctx);
+                    if (p != null) Duels.challenge(p, EntityArgument.getPlayer(ctx, "player"), Prices.parse(StringArgumentType.getString(ctx, "bet")));
+                    return 1;
+                }))));
         d.register(Commands.literal("troll").executes(ctx -> { TrollMenu.open(ctx.getSource().getPlayerOrException()); return 1; }));
         d.register(Commands.literal("ah")
             .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p, null, false, 0, 0); return 1; })

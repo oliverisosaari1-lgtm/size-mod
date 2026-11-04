@@ -30,12 +30,15 @@ public class Data {
         public boolean moneyHud = true;
         public long shards = 0;
         public long playTicks = 0; // time played toward the next shard
+        public java.util.List<String> duelItems = null; // their own items, saved while in a duel
+        public Home duelReturn = null;                  // where to send them back after a duel
     }
 
     public Map<String, PlayerData> players = new HashMap<>();
     public java.util.List<Listing> listings = new java.util.ArrayList<>();
     public long nextListingId = 1;
     public boolean lobbyBuilt = false;
+    public boolean arenaBuilt = false;
 
     /** An item a player put up for sale with /ah sell. */
     public static class Listing {
