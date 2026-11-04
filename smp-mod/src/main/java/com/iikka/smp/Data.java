@@ -35,6 +35,7 @@ public class Data {
     public Map<String, PlayerData> players = new HashMap<>();
     public java.util.List<Listing> listings = new java.util.ArrayList<>();
     public long nextListingId = 1;
+    public boolean lobbyBuilt = false;
 
     /** An item a player put up for sale with /ah sell. */
     public static class Listing {

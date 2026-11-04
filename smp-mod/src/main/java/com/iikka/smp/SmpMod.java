@@ -202,6 +202,15 @@ public class SmpMod implements ModInitializer {
             return InteractionResult.PASS;
         });
 
+        // Nobody can break or place blocks in the lobby (except in creative)
+        net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, be) ->
+            player.isCreative() || world != server.overworld() || !Lobby.inside(pos));
+        net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
+            if (!world.isClientSide() && !player.isCreative() && server != null && world == server.overworld()
+                && Lobby.inside(hit.getBlockPos()) && !player.getItemInHand(hand).isEmpty()) return InteractionResult.FAIL;
+            return InteractionResult.PASS;
+        });
+
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> register(dispatcher));
     }
 
@@ -238,6 +247,21 @@ public class SmpMod implements ModInitializer {
                 return 1;
             }));
         }
+        d.register(Commands.literal("lobby").executes(ctx -> {
+            ServerPlayer p = player(ctx);
+            if (p == null) return 0;
+            ServerLevel level = server.overworld();
+            if (!DATA.lobbyBuilt) {
+                say(p, "Building the lobby...", ChatFormatting.YELLOW);
+                Lobby.build(level);
+                DATA.lobbyBuilt = true;
+                save();
+            }
+            teleport(p, level, Lobby.X + 0.5, Lobby.Y + 1, Lobby.Z + 6.5, 180f, 0f);
+            say(p, "Welcome to the lobby! Use /rtp, /spawn or /home to leave.", ChatFormatting.AQUA);
+            return 1;
+        }));
+        d.register(Commands.literal("hub").redirect(d.getRoot().getChild("lobby")));
         d.register(Commands.literal("shards").executes(ctx -> {
             ServerPlayer p = player(ctx);
             if (p == null) return 0;

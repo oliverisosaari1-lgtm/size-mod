@@ -11,7 +11,7 @@ public class DonutSmpScreen extends Screen {
     private static final String[] HELP = {
         "/ah - Auction    /sell - Sell items    /pay - Pay a player",
         "/home - Your homes    /sethome name - Save a home",
-        "/rtp - Random teleport    /spawn - Go to spawn",
+        "/rtp - Random teleport    /spawn - Spawn    /lobby - Lobby",
         "/tpa, /tpahere, /tpaccept - Teleport to friends",
         "/bal, /baltop, /stats, /shards    /settings - Menu",
         "You get 1 shard for every 2 hours you play",
