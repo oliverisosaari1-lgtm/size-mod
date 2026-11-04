@@ -16,6 +16,7 @@ import java.util.List;
 public class SmpClient implements ClientModInitializer {
     private static long money = 0;
     private static boolean show = true;
+    private static long shards = 0;
 
     private static net.minecraft.client.KeyMapping zoomKey;
 
@@ -79,6 +80,7 @@ public class SmpClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(MoneyPayload.TYPE, (payload, context) -> {
             money = payload.money();
             show = payload.show();
+            shards = payload.shards();
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ScreenPayload.TYPE, (payload, context) -> {
@@ -119,15 +121,16 @@ public class SmpClient implements ClientModInitializer {
             // In singleplayer read the money straight from the world, in case the server message didn't arrive
             if (mc.hasSingleplayerServer()) {
                 Data.PlayerData pd = SmpMod.DATA.players.get(mc.player.getUUID().toString());
-                if (pd != null) { money = pd.money; show = pd.moneyHud; }
+                if (pd != null) { money = pd.money; show = pd.moneyHud; shards = pd.shards; }
             }
             if (!show || !ClientConfig.INSTANCE.moneyBox) return;
             var font = mc.font;
             String name = mc.player.getName().getString();
             String amount = Prices.shortNum(money);
             int pad = 3;
-            int w = Math.max(font.width(name), font.width("$ " + amount)) + pad * 2;
-            int h = font.lineHeight * 2 + pad * 2 + 1;
+            String shardText = Prices.shortNum(shards);
+            int w = Math.max(font.width(name), Math.max(font.width("$ " + amount), font.width("◆ " + shardText))) + pad * 2;
+            int h = font.lineHeight * 3 + pad * 2 + 2;
             int x = graphics.guiWidth() - w - 2;
             int y = graphics.guiHeight() / 2 - h / 2;
             graphics.fill(x, y, x + w, y + h, 0x90000000);
@@ -135,6 +138,9 @@ public class SmpClient implements ClientModInitializer {
             int y2 = y + pad + font.lineHeight + 1;
             graphics.text(font, "$", x + pad, y2, 0xFF55FF55, true);
             graphics.text(font, amount, x + pad + font.width("$ "), y2, 0xFFFFFFFF, true);
+            int y3 = y2 + font.lineHeight + 1;
+            graphics.text(font, "◆", x + pad, y3, 0xFFDD55FF, true);
+            graphics.text(font, shardText, x + pad + font.width("◆ "), y3, 0xFFFFFFFF, true);
         });
     }
 

@@ -13,7 +13,8 @@ public class DonutSmpScreen extends Screen {
         "/home - Your homes    /sethome name - Save a home",
         "/rtp - Random teleport    /spawn - Go to spawn",
         "/tpa, /tpahere, /tpaccept - Teleport to friends",
-        "/bal, /baltop, /stats    /settings - Menu",
+        "/bal, /baltop, /stats, /shards    /settings - Menu",
+        "You get 1 shard for every 2 hours you play",
         "Hold C to zoom"};
     private final Screen parent;
 

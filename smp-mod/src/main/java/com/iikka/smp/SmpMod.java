@@ -39,6 +39,7 @@ public class SmpMod implements ModInitializer {
     private static Path dataFile;
 
     private static final int COMBAT_TICKS = 15 * 20;
+    private static final long SHARD_TICKS = 2L * 60 * 60 * 20; // 2 hours
     private static final int TPA_TIMEOUT_TICKS = 60 * 20;
     private static final int RTP_RANGE = 5000;
     private static final int MAX_HOMES = 5;
@@ -78,7 +79,7 @@ public class SmpMod implements ModInitializer {
         if (old != null) board.removeObjective(old);
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             if (ServerPlayNetworking.canSend(p, MoneyPayload.TYPE)) {
-                ServerPlayNetworking.send(p, new MoneyPayload(money(p), data(p).moneyHud));
+                ServerPlayNetworking.send(p, new MoneyPayload(money(p), data(p).moneyHud, data(p).shards));
             }
         }
     }
@@ -167,6 +168,15 @@ public class SmpMod implements ModInitializer {
             tick++;
             if (tick % (20 * 60 * 5) == 0) save();
             if (tick % 40 == 0) updateSidebar(); // keep the money box up to date
+            // One shard for every 2 hours played
+            for (ServerPlayer p : s.getPlayerList().getPlayers()) {
+                Data.PlayerData pd = data(p);
+                if (++pd.playTicks >= SHARD_TICKS) {
+                    pd.playTicks = 0;
+                    pd.shards++;
+                    say(p, "You got a shard for playing 2 hours! You have " + pd.shards + " shards.", ChatFormatting.LIGHT_PURPLE);
+                }
+            }
             if (tick % 20 == 0) {
                 for (ServerPlayer p : s.getPlayerList().getPlayers()) {
                     Long until = combatUntil.get(p.getUUID());
@@ -221,13 +231,21 @@ public class SmpMod implements ModInitializer {
             return 1;
         }));
         d.register(Commands.literal("togglesettings").executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) SettingsMenu.open(p); return 1; }));
-        for (String soon : List.of("orders", "rtpqueue", "friends", "shards")) {
+        for (String soon : List.of("orders", "rtpqueue", "friends")) {
             d.register(Commands.literal(soon).executes(ctx -> {
                 ServerPlayer p = player(ctx);
                 if (p != null) say(p, "Coming soon!", ChatFormatting.YELLOW);
                 return 1;
             }));
         }
+        d.register(Commands.literal("shards").executes(ctx -> {
+            ServerPlayer p = player(ctx);
+            if (p == null) return 0;
+            Data.PlayerData pd = data(p);
+            long mins = (SHARD_TICKS - pd.playTicks) / 20 / 60;
+            say(p, "You have " + pd.shards + " shards. Next shard in " + (mins / 60) + "h " + (mins % 60) + "m of playing.", ChatFormatting.LIGHT_PURPLE);
+            return 1;
+        }));
         d.register(Commands.literal("stats").executes(ctx -> {
             ServerPlayer p = player(ctx);
             if (p == null) return 0;
@@ -237,6 +255,7 @@ public class SmpMod implements ModInitializer {
             say(p, "---- Your stats ----", ChatFormatting.GOLD);
             say(p, "Money: " + Prices.money(pd.money), ChatFormatting.YELLOW);
             say(p, "Money rank: #" + (list.indexOf(pd) + 1) + " of " + list.size(), ChatFormatting.YELLOW);
+            say(p, "Shards: " + pd.shards, ChatFormatting.YELLOW);
             say(p, "Homes: " + pd.homes.size() + "/" + MAX_HOMES, ChatFormatting.YELLOW);
             return 1;
         }));

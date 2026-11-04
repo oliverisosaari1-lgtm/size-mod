@@ -28,6 +28,8 @@ public class Data {
         public boolean tpaRequests = true;
         public boolean combatTimer = true;
         public boolean moneyHud = true;
+        public long shards = 0;
+        public long playTicks = 0; // time played toward the next shard
     }
 
     public Map<String, PlayerData> players = new HashMap<>();
