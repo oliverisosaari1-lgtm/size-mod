@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "pvpmenu",
+  "version": "${version}",
+  "name": "PvP Menu",
+  "description": "Press Right Shift for the PvP menu: change your hand viewmodel.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": { "client": ["com.iikka.pvp.PvpClient"] },
+  "mixins": ["pvpmenu.mixins.json"],
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "java": ">=21", "fabric-api": "*" }
+}

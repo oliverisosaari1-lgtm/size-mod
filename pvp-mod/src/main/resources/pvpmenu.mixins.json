@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.iikka.pvp.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["HandMixin"],
+  "injectors": { "defaultRequire": 1 }
+}
