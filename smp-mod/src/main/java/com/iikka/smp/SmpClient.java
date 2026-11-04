@@ -60,6 +60,10 @@ public class SmpClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        // Sodium is only needed in the game, not on the server, so we check for it here
+        if (!net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("sodium")) {
+            throw new IllegalStateException("DonutSMP Mod needs Sodium. Add Sodium to your mods folder.");
+        }
         // Light blue inventory and chests, always on
         net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("donutsmp").ifPresent(mod ->
             net.fabricmc.fabric.api.resource.v1.ResourceLoader.registerBuiltinPack(

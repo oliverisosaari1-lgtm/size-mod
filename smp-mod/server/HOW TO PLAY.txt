@@ -1,0 +1,31 @@
+DONUTSMP SERVER - HOW TO PLAY WITH A FRIEND
+===========================================
+
+1) INSTALL JAVA 25 (only once)
+   Go to https://adoptium.net/temurin/releases/?version=25&os=windows
+   Download the .msi for Windows and install it (click Next, Next, Install).
+
+2) START THE SERVER
+   Double-click start.bat. The first time it downloads Minecraft, so wait
+   until it says "Done". Keep the black window open while you play.
+
+3) JOIN YOURSELF
+   Open your DonutSMP Mod instance in Prism, go to Multiplayer,
+   Add Server, address:  localhost
+
+4) LET YOUR FRIEND JOIN (playit.gg, free)
+   a) Go to https://playit.gg and click Download, install and open it.
+   b) It opens a website. Make a free account and click "Claim" for your agent.
+   c) Click "Add Tunnel", choose "Minecraft Java", port 25565, then Create.
+      You get an address like  something.gl.joinmc.link  - send it to your friend.
+   d) For voice chat, add another tunnel: choose "UDP", port 24454.
+      Open the server folder > config > voicechat > voicechat-server.properties
+      and set  voice_host=  to that UDP tunnel address (like  1.2.3.4:12345 ).
+      Restart the server.
+   Keep playit open while you play.
+
+5) YOUR FRIEND
+   Your friend needs the same DonutSMP Mod modpack in Prism
+   (DonutSMP-Mod-Prism-26.3.zip). Then Multiplayer > Add Server > the playit address.
+
+To stop the server, type  stop  in the black window.
