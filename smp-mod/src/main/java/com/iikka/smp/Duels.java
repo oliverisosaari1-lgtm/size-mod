@@ -21,11 +21,36 @@ import java.util.*;
 
 /** /duel: fight a friend in the arena with the mace kit, winner takes the bet. Your own stuff comes back after. */
 public class Duels {
-    record Request(UUID from, long bet, long time) {}
-    record Duel(UUID a, UUID b, long bet) {}
+    record Request(UUID from, long bet, String kit, long time) {}
+    record Duel(UUID a, UUID b, long bet, String kit) {}
 
     private static final Map<UUID, Request> requests = new HashMap<>(); // target -> request
     private static final List<Duel> duels = new ArrayList<>();
+
+    public static final List<String> KITS = List.of("mace", "sword", "axe", "vanilla");
+
+    /** In a vanilla (crystal) duel you can place and break blocks; the arena is rebuilt after. */
+    public static boolean canBuild(ServerPlayer p) {
+        Duel d = find(p.getUUID());
+        return d != null && d.kit.equals("vanilla");
+    }
+
+    /** Called every tick: nobody gets out of the arena during a duel. */
+    public static void tick() {
+        for (Duel d : duels) {
+            for (UUID id : List.of(d.a, d.b)) {
+                ServerPlayer p = online(id);
+                if (p == null) continue;
+                net.minecraft.core.BlockPos pos = p.blockPosition();
+                boolean out = p.level() != SmpMod.server().overworld() || Math.abs(pos.getX() - Arena.X) > 19 || Math.abs(pos.getZ() - Arena.Z) > 19
+                    || pos.getY() > Arena.Y + 45;
+                if (out && pos.getY() >= Arena.Y - 10) {
+                    SmpMod.teleport(p, SmpMod.server().overworld(), Arena.X + 0.5, Arena.Y + 1, Arena.Z + (id.equals(d.a) ? -14.5 : 15.5), p.getYRot(), p.getXRot());
+                    SmpMod.say(p, "You can't leave the arena during a duel!", ChatFormatting.RED);
+                }
+            }
+        }
+    }
 
     public static boolean inDuel(ServerPlayer p) {
         return find(p.getUUID()) != null;
@@ -42,15 +67,15 @@ public class Duels {
 
     // ---------- commands ----------
 
-    public static void challenge(ServerPlayer me, ServerPlayer target, long bet) {
+    public static void challenge(ServerPlayer me, ServerPlayer target, String kit, long bet) {
         if (target == me) { SmpMod.say(me, "You can't duel yourself!", ChatFormatting.RED); return; }
         if (inDuel(me) || inDuel(target)) { SmpMod.say(me, "One of you is already in a duel!", ChatFormatting.RED); return; }
         if (bet < 0) bet = 0;
         if (SmpMod.money(me) < bet) { SmpMod.say(me, "You only have " + Prices.money(SmpMod.money(me)), ChatFormatting.RED); return; }
-        requests.put(target.getUUID(), new Request(me.getUUID(), bet, System.currentTimeMillis()));
+        requests.put(target.getUUID(), new Request(me.getUUID(), bet, kit, System.currentTimeMillis()));
         String b = bet > 0 ? " for " + Prices.money(bet) : "";
         SmpMod.say(me, "Duel request sent to " + target.getName().getString() + b, ChatFormatting.GREEN);
-        SmpMod.say(target, me.getName().getString() + " wants to duel you" + b + "! Mace kit, winner takes the bet.", ChatFormatting.GOLD);
+        SmpMod.say(target, me.getName().getString() + " wants to duel you" + b + "! Kit: " + kit + ". Winner takes the bet.", ChatFormatting.GOLD);
         SmpMod.say(target, "Type /duel accept or /duel deny", ChatFormatting.YELLOW);
     }
 
@@ -72,12 +97,12 @@ public class Duels {
         if (SmpMod.money(other) < r.bet) { SmpMod.say(me, other.getName().getString() + " doesn't have the money anymore.", ChatFormatting.RED); return; }
         SmpMod.addMoney(me, -r.bet);
         SmpMod.addMoney(other, -r.bet);
-        duels.add(new Duel(other.getUUID(), me.getUUID(), r.bet));
+        duels.add(new Duel(other.getUUID(), me.getUUID(), r.bet, r.kit));
 
         ServerLevel level = SmpMod.server().overworld();
         if (!SmpMod.DATA.arenaBuilt) { Arena.build(level); SmpMod.DATA.arenaBuilt = true; }
-        start(other, level, Arena.X + 0.5, Arena.Z - 14.5, 0f);
-        start(me, level, Arena.X + 0.5, Arena.Z + 15.5, 180f);
+        start(other, level, Arena.X + 0.5, Arena.Z - 14.5, 0f, r.kit);
+        start(me, level, Arena.X + 0.5, Arena.Z + 15.5, 180f, r.kit);
         String b = r.bet > 0 ? " Winner gets " + Prices.money(r.bet * 2) + "!" : "";
         SmpMod.say(other, "Duel started against " + me.getName().getString() + "!" + b, ChatFormatting.GOLD);
         SmpMod.say(me, "Duel started against " + other.getName().getString() + "!" + b, ChatFormatting.GOLD);
@@ -85,7 +110,7 @@ public class Duels {
 
     // ---------- start / end ----------
 
-    private static void start(ServerPlayer p, ServerLevel level, double x, double z, float yaw) {
+    private static void start(ServerPlayer p, ServerLevel level, double x, double z, float yaw, String kit) {
         Data.PlayerData d = SmpMod.data(p);
         // Save their own things so they get them back after
         d.duelItems = new ArrayList<>();
@@ -98,7 +123,7 @@ public class Duels {
         SmpMod.saveNow();
 
         inv.clearContent();
-        giveKit(p);
+        giveKit(p, kit);
         heal(p);
         SmpMod.teleport(p, level, x, Arena.Y + 1, z, yaw, 0f);
     }
@@ -147,6 +172,11 @@ public class Duels {
             Component.literal(wName + " beat " + lName + " in a duel" + b + "!").withStyle(ChatFormatting.GOLD), false);
         if (winner != null) restore(winner);
         if (loser != null) restore(loser);
+        // Clean the arena: items on the ground, and rebuild it after a vanilla (crystal) duel
+        ServerLevel level = SmpMod.server().overworld();
+        net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(Arena.X - 25, Arena.Y - 5, Arena.Z - 25, Arena.X + 25, Arena.Y + 50, Arena.Z + 25);
+        for (var e : level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box, e -> !(e instanceof ServerPlayer))) e.discard();
+        if (d.kit.equals("vanilla") && duels.stream().noneMatch(x -> x.kit.equals("vanilla"))) Arena.build(level);
     }
 
     // ---------- the mace kit ----------
@@ -178,8 +208,89 @@ public class Duels {
         return s;
     }
 
-    private static void giveKit(ServerPlayer p) {
+    private static void armorOn(ServerPlayer p) {
+        p.setItemSlot(EquipmentSlot.HEAD, armor(Items.NETHERITE_HELMET));
+        p.setItemSlot(EquipmentSlot.CHEST, armor(Items.NETHERITE_CHESTPLATE));
+        p.setItemSlot(EquipmentSlot.LEGS, armor(Items.NETHERITE_LEGGINGS));
+        p.setItemSlot(EquipmentSlot.FEET, armor(Items.NETHERITE_BOOTS));
+    }
+
+    private static ItemStack sword() {
+        return item(Items.NETHERITE_SWORD, 1, Enchantments.SHARPNESS, 5, Enchantments.UNBREAKING, 3, Enchantments.MENDING, 1, Enchantments.FIRE_ASPECT, 2);
+    }
+
+    private static ItemStack axe() {
+        return item(Items.NETHERITE_AXE, 1, Enchantments.SHARPNESS, 5, Enchantments.UNBREAKING, 3, Enchantments.MENDING, 1);
+    }
+
+    private static void giveKit(ServerPlayer p, String kit) {
         var inv = p.getInventory();
+        if (kit.equals("sword")) {
+            armorOn(p);
+            p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+            inv.setItem(0, sword());
+            inv.setItem(1, new ItemStack(Items.GOLDEN_APPLE, 64));
+            inv.setItem(2, new ItemStack(Items.ENDER_PEARL, 16));
+            inv.setItem(3, potion(Items.SPLASH_POTION, Potions.STRONG_HEALING, 1));
+            inv.setItem(4, potion(Items.SPLASH_POTION, Potions.STRONG_HEALING, 1));
+            inv.setItem(5, potion(Items.SPLASH_POTION, Potions.STRONG_STRENGTH, 1));
+            inv.setItem(6, potion(Items.SPLASH_POTION, Potions.STRONG_SWIFTNESS, 1));
+            inv.setItem(7, new ItemStack(Items.TOTEM_OF_UNDYING));
+            inv.setItem(8, new ItemStack(Items.COOKED_BEEF, 64));
+            for (int i = 9; i < 15; i++) inv.setItem(i, new ItemStack(Items.TOTEM_OF_UNDYING));
+            for (int i = 15; i < 21; i++) inv.setItem(i, potion(Items.SPLASH_POTION, Potions.STRONG_HEALING, 1));
+            inv.setItem(21, new ItemStack(Items.EXPERIENCE_BOTTLE, 64));
+            return;
+        }
+        if (kit.equals("axe")) {
+            armorOn(p);
+            p.setItemInHand(InteractionHand.OFF_HAND, item(Items.SHIELD, 1, Enchantments.UNBREAKING, 3, Enchantments.MENDING, 1));
+            inv.setItem(0, axe());
+            inv.setItem(1, sword());
+            inv.setItem(2, new ItemStack(Items.GOLDEN_APPLE, 64));
+            inv.setItem(3, item(Items.CROSSBOW, 1, Enchantments.QUICK_CHARGE, 3, Enchantments.PIERCING, 4));
+            inv.setItem(4, new ItemStack(Items.ARROW, 64));
+            inv.setItem(5, new ItemStack(Items.ENDER_PEARL, 16));
+            inv.setItem(6, potion(Items.SPLASH_POTION, Potions.STRONG_HEALING, 1));
+            inv.setItem(7, new ItemStack(Items.TOTEM_OF_UNDYING));
+            inv.setItem(8, new ItemStack(Items.COOKED_BEEF, 64));
+            for (int i = 9; i < 13; i++) inv.setItem(i, new ItemStack(Items.TOTEM_OF_UNDYING));
+            for (int i = 13; i < 19; i++) inv.setItem(i, potion(Items.SPLASH_POTION, Potions.STRONG_HEALING, 1));
+            inv.setItem(19, item(Items.SHIELD, 1, Enchantments.UNBREAKING, 3));
+            inv.setItem(20, new ItemStack(Items.EXPERIENCE_BOTTLE, 64));
+            return;
+        }
+        if (kit.equals("vanilla")) {
+            armorOn(p);
+            p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+            inv.setItem(0, sword());
+            inv.setItem(1, new ItemStack(Items.END_CRYSTAL, 64));
+            inv.setItem(2, new ItemStack(Items.OBSIDIAN, 64));
+            inv.setItem(3, new ItemStack(Items.RESPAWN_ANCHOR, 64));
+            inv.setItem(4, new ItemStack(Items.GLOWSTONE, 64));
+            inv.setItem(5, new ItemStack(Items.ENDER_PEARL, 16));
+            inv.setItem(6, new ItemStack(Items.GOLDEN_APPLE, 64));
+            inv.setItem(7, new ItemStack(Items.TOTEM_OF_UNDYING));
+            inv.setItem(8, new ItemStack(Items.EXPERIENCE_BOTTLE, 64));
+            int slot = 9;
+            for (int i = 0; i < 9; i++) inv.setItem(slot++, new ItemStack(Items.TOTEM_OF_UNDYING));
+            inv.setItem(slot++, new ItemStack(Items.END_CRYSTAL, 64));
+            inv.setItem(slot++, new ItemStack(Items.OBSIDIAN, 64));
+            inv.setItem(slot++, new ItemStack(Items.RESPAWN_ANCHOR, 64));
+            inv.setItem(slot++, new ItemStack(Items.GLOWSTONE, 64));
+            inv.setItem(slot++, new ItemStack(Items.EXPERIENCE_BOTTLE, 64));
+            inv.setItem(slot++, new ItemStack(Items.COBWEB, 64));
+            inv.setItem(slot++, item(Items.NETHERITE_PICKAXE, 1, Enchantments.EFFICIENCY, 5, Enchantments.UNBREAKING, 3, Enchantments.MENDING, 1));
+            inv.setItem(slot++, armor(Items.NETHERITE_HELMET));
+            inv.setItem(slot++, armor(Items.NETHERITE_CHESTPLATE));
+            inv.setItem(slot++, armor(Items.NETHERITE_LEGGINGS));
+            inv.setItem(slot++, armor(Items.NETHERITE_BOOTS));
+            inv.setItem(slot++, potion(Items.SPLASH_POTION, Potions.STRONG_STRENGTH, 1));
+            inv.setItem(slot++, potion(Items.SPLASH_POTION, Potions.STRONG_SWIFTNESS, 1));
+            inv.setItem(slot++, potion(Items.POTION, Potions.LONG_FIRE_RESISTANCE, 1));
+            return;
+        }
+        // mace kit
         p.setItemSlot(EquipmentSlot.HEAD, armor(Items.NETHERITE_HELMET));
         p.setItemSlot(EquipmentSlot.CHEST, armor(Items.NETHERITE_CHESTPLATE));
         p.setItemSlot(EquipmentSlot.LEGS, armor(Items.NETHERITE_LEGGINGS));

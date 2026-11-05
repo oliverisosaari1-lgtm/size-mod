@@ -128,6 +128,55 @@ public class SmpMod implements ModInitializer {
         return p;
     }
 
+    private static int rtp(CommandContext<CommandSourceStack> ctx, String where) throws CommandSyntaxException {
+        ServerPlayer p = player(ctx);
+        if (p == null) return 0;
+        ServerLevel level = where.equals("nether") ? server.getLevel(net.minecraft.world.level.Level.NETHER)
+            : where.equals("end") ? server.getLevel(net.minecraft.world.level.Level.END) : server.overworld();
+        if (level == null) { say(p, "That world isn't on this server.", ChatFormatting.RED); return 0; }
+        for (int attempt = 0; attempt < 30; attempt++) {
+            int x, z;
+            if (where.equals("end")) { // the outer end islands
+                double a = RANDOM.nextDouble() * Math.PI * 2, r = 1200 + RANDOM.nextInt(3000);
+                x = (int) (Math.cos(a) * r); z = (int) (Math.sin(a) * r);
+            } else {
+                int range = where.equals("nether") ? RTP_RANGE / 8 : RTP_RANGE;
+                x = RANDOM.nextInt(range * 2) - range; z = RANDOM.nextInt(range * 2) - range;
+            }
+            level.getChunk(x >> 4, z >> 4);
+            int y = -1;
+            if (where.equals("nether")) {
+                for (int yy = 32; yy < 118; yy++) {
+                    BlockState below = level.getBlockState(new BlockPos(x, yy - 1, z));
+                    if (below.isAir() || !below.getFluidState().isEmpty()) continue;
+                    if (level.getBlockState(new BlockPos(x, yy, z)).isAir() && level.getBlockState(new BlockPos(x, yy + 1, z)).isAir()) { y = yy; break; }
+                }
+                if (y < 0) continue;
+            } else {
+                y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                BlockState ground = level.getBlockState(new BlockPos(x, y - 1, z));
+                if (y <= level.getMinY() + 1 || !ground.getFluidState().isEmpty() || ground.isAir()) continue;
+            }
+            teleport(p, level, x + 0.5, y, z + 0.5, p.getYRot(), p.getXRot());
+            say(p, "Teleported to a random place" + (where.equals("overworld") ? "" : " in the " + where) + "!", ChatFormatting.GREEN);
+            return 1;
+        }
+        say(p, "Couldn't find a safe spot, try again!", ChatFormatting.RED);
+        return 0;
+    }
+
+    /** /duel player [mace|sword|axe|vanilla] [bet]  (or /duel player bet) */
+    private static int duel(CommandContext<CommandSourceStack> ctx, String first, String second) throws CommandSyntaxException {
+        ServerPlayer p = player(ctx);
+        if (p == null) return 0;
+        String kit = "mace";
+        String bet = second;
+        if (Duels.KITS.contains(first.toLowerCase())) kit = first.toLowerCase();
+        else bet = first;
+        Duels.challenge(p, EntityArgument.getPlayer(ctx, "player"), kit, bet == null ? 0 : Prices.parse(bet));
+        return 1;
+    }
+
     static void teleport(ServerPlayer p, ServerLevel level, double x, double y, double z, float yaw, float pitch) {
         p.teleportTo(level, x, y, z, Set.of(), yaw, pitch, true);
     }
@@ -189,6 +238,7 @@ public class SmpMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(s -> {
             tick++;
             TrollMenu.tick();
+            Duels.tick();
             if (tick % (20 * 60 * 5) == 0) save();
             if (tick % 40 == 0) updateSidebar(); // keep the money box up to date
             // One shard for every 2 hours played
@@ -227,12 +277,13 @@ public class SmpMod implements ModInitializer {
 
         // Nobody can break or place blocks in the lobby (except in creative)
         net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, be) ->
-            player.isCreative() || world != server.overworld() || (!Lobby.inside(pos) && !Arena.inside(pos)));
+            player.isCreative() || world != server.overworld() || (!Lobby.inside(pos) && !Arena.inside(pos))
+                || (Arena.inside(pos) && player instanceof ServerPlayer sp && Duels.canBuild(sp)));
         net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
             if (!world.isClientSide() && !player.isCreative() && server != null && world == server.overworld()
                 && Lobby.inside(hit.getBlockPos()) && !player.getItemInHand(hand).isEmpty()) return InteractionResult.FAIL;
             if (!world.isClientSide() && !player.isCreative() && server != null && world == server.overworld()
-                && Arena.inside(hit.getBlockPos()) && (player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BlockItem
+                && Arena.inside(hit.getBlockPos()) && !(player instanceof ServerPlayer sp && Duels.canBuild(sp)) && (player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BlockItem
                     || player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BucketItem)) return InteractionResult.FAIL;
             return InteractionResult.PASS;
         });
@@ -247,12 +298,12 @@ public class SmpMod implements ModInitializer {
             .then(Commands.literal("accept").executes(ctx -> { Duels.accept(ctx.getSource().getPlayerOrException()); return 1; }))
             .then(Commands.literal("deny").executes(ctx -> { Duels.deny(ctx.getSource().getPlayerOrException()); return 1; }))
             .then(Commands.argument("player", EntityArgument.player())
-                .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) Duels.challenge(p, EntityArgument.getPlayer(ctx, "player"), 0); return 1; })
-                .then(Commands.argument("bet", StringArgumentType.word()).executes(ctx -> {
-                    ServerPlayer p = player(ctx);
-                    if (p != null) Duels.challenge(p, EntityArgument.getPlayer(ctx, "player"), Prices.parse(StringArgumentType.getString(ctx, "bet")));
-                    return 1;
-                }))));
+                .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) Duels.challenge(p, EntityArgument.getPlayer(ctx, "player"), "mace", 0); return 1; })
+                .then(Commands.argument("kit_or_bet", StringArgumentType.word())
+                    .suggests((c, b2) -> { for (String k : Duels.KITS) b2.suggest(k); return b2.buildFuture(); })
+                    .executes(ctx -> duel(ctx, StringArgumentType.getString(ctx, "kit_or_bet"), null))
+                    .then(Commands.argument("bet", StringArgumentType.word())
+                        .executes(ctx -> duel(ctx, StringArgumentType.getString(ctx, "kit_or_bet"), StringArgumentType.getString(ctx, "bet")))))));
         d.register(Commands.literal("troll").executes(ctx -> { TrollMenu.open(ctx.getSource().getPlayerOrException()); return 1; }));
         d.register(Commands.literal("ah")
             .executes(ctx -> { ServerPlayer p = player(ctx); if (p != null) ShopMenu.open(p, null, false, 0, 0); return 1; })
@@ -404,24 +455,11 @@ public class SmpMod implements ModInitializer {
                 }))));
 
         // /rtp: random spot in the overworld
-        d.register(Commands.literal("rtp").executes(ctx -> {
-            ServerPlayer p = player(ctx);
-            if (p == null) return 0;
-            ServerLevel level = server.overworld();
-            for (int attempt = 0; attempt < 20; attempt++) {
-                int x = RANDOM.nextInt(RTP_RANGE * 2) - RTP_RANGE;
-                int z = RANDOM.nextInt(RTP_RANGE * 2) - RTP_RANGE;
-                level.getChunk(x >> 4, z >> 4);
-                int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-                BlockState ground = level.getBlockState(new BlockPos(x, y - 1, z));
-                if (y <= level.getMinY() + 1 || !ground.getFluidState().isEmpty() || ground.isAir()) continue;
-                teleport(p, level, x + 0.5, y, z + 0.5, p.getYRot(), p.getXRot());
-                say(p, "Teleported to a random place!", ChatFormatting.GREEN);
-                return 1;
-            }
-            say(p, "Couldn't find a safe spot, try again!", ChatFormatting.RED);
-            return 0;
-        }));
+        d.register(Commands.literal("rtp")
+            .executes(ctx -> rtp(ctx, "overworld"))
+            .then(Commands.literal("overworld").executes(ctx -> rtp(ctx, "overworld")))
+            .then(Commands.literal("nether").executes(ctx -> rtp(ctx, "nether")))
+            .then(Commands.literal("end").executes(ctx -> rtp(ctx, "end"))));
 
         // /spawn
         d.register(Commands.literal("spawn").executes(ctx -> {

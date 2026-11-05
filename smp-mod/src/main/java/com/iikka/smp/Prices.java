@@ -60,10 +60,12 @@ public class Prices {
         SELL_ONLY.put(Items.DRAGON_EGG, 100_000_000L); // can only be sold, not bought
         SHOP.put(Items.KELP, 3_200L);
         SHOP.put(Items.DIAMOND_BLOCK, 100_000L);
+        SHOP.put(Items.WATER_BUCKET, 2_000L);
+        SHOP.put(Items.BUCKET, 1_200L);
         SHOP.put(Items.BOW, 20_000L);
         SHOP.put(Items.ARROW, 200L);
         SHOP.put(Items.SHIELD, 15_000L);
-        SHOP.put(Items.TOTEM_OF_UNDYING, 25_000_000L);
+        SHOP.put(Items.TOTEM_OF_UNDYING, 2_000L);
         SHOP.put(Items.ELYTRA, 500_000_000L);
         SHOP.put(Items.FIREWORK_ROCKET, 5_000L);
         for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
@@ -93,7 +95,7 @@ public class Prices {
     private static boolean hidden(String id) {
         return id.equals("air") || id.contains("command_block") || id.equals("barrier") || id.startsWith("structure_")
             || id.equals("jigsaw") || id.equals("debug_stick") || id.equals("knowledge_book") || id.equals("light")
-            || id.startsWith("test_") || id.equals("dragon_egg") || id.equals("enchanted_book") || id.equals("end_portal_frame") || id.equals("bedrock");
+            || id.startsWith("test_") || id.equals("dragon_egg") || id.equals("enchanted_book") || id.equals("end_portal_frame") || id.equals("bedrock") || id.endsWith("spawner");
     }
 
     /** Enchanted book worth: 25K x level x level (Sharpness V = 625K), Mending 1M. */
