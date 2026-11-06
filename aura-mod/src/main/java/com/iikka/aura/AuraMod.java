@@ -133,6 +133,12 @@ public class AuraMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Rings::tick);
         ServerTickEvents.END_SERVER_TICK.register(Wave::tick);
         ServerTickEvents.END_SERVER_TICK.register(Powers::tick);
+        ServerTickEvents.END_SERVER_TICK.register(Toggles::tick);
+        // With /slime on, mobs you hit bounce high
+        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((pl, w, h, target, hit) -> {
+            if (pl instanceof ServerPlayer sp && Toggles.has("slime", sp)) { target.setDeltaMovement(target.getDeltaMovement().add(0, 1.2, 0)); target.hurtMarked = true; }
+            return net.minecraft.world.InteractionResult.PASS;
+        });
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {
             d.register(Commands.literal("wave").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -154,6 +160,30 @@ public class AuraMod implements ModInitializer {
                 if (r == null) msg(p, "Look at a mob close to you first, then type /dragonride.", false); else msg(p, r, true);
                 return 1;
             }));
+            d.register(Commands.literal("lightning").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                boolean on = Toggles.toggle("lightning", p); msg(p, on ? "Lightning on! It strikes wherever you look." : "Lightning off.", on); return 1;
+            }));
+            d.register(Commands.literal("magnet").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                boolean on = Toggles.toggle("magnet", p); msg(p, on ? "Magnet on! Items and mobs fly to you." : "Magnet off.", on); return 1;
+            }));
+            d.register(Commands.literal("laser").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                boolean on = Toggles.toggle("laser", p); msg(p, on ? "Laser on! It burns through blocks and mobs." : "Laser off.", on); return 1;
+            }));
+            d.register(Commands.literal("slime").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                boolean on = Toggles.toggle("slime", p); msg(p, on ? "Slime on! Everything you touch becomes bouncy." : "Slime off.", on); return 1;
+            }));
+            d.register(Commands.literal("swords").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                boolean on = Toggles.toggle("swords", p); msg(p, on ? "Swords on! They spin around you and hit mobs." : "Swords off.", on); return 1;
+            }));
+            d.register(Commands.literal("volcano").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                Toggles.volcano(p); msg(p, "A volcano is rising where you look!", true); return 1;
+            }));
             d.register(Commands.literal("ring").executes(ctx -> { Rings.openMenu(ctx.getSource().getPlayerOrException()); return 1; }));
             d.register(Commands.literal("aura").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -172,12 +202,12 @@ public class AuraMod implements ModInitializer {
             if (player instanceof ServerPlayer p && superTouch.contains(p.getUUID())) veinMine((ServerLevel) world, p, pos, state);
         });
         ServerTickEvents.END_SERVER_TICK.register(AuraMod::tick);
-        ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> { removeAura(h.player.getUUID()); Wave.remove(h.player.getUUID()); superTouch.remove(h.player.getUUID()); });
-        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { Rings.clear(); Wave.clear(); Powers.clear(); for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
+        ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> { removeAura(h.player.getUUID()); Wave.remove(h.player.getUUID()); Toggles.leave(h.player.getUUID()); superTouch.remove(h.player.getUUID()); });
+        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { Rings.clear(); Wave.clear(); Powers.clear(); Toggles.clear(); for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
         // Leftover glass from a crash is cleaned up
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
             if (e.getTags().contains(Rings.TAG) && e.tickCount > 100) e.discard();
-            if (e.getTags().contains(Powers.TAG) && e.tickCount > 400) e.discard();
+            if (e.getTags().contains(Powers.TAG) && !Toggles.ours(e) && e.tickCount > 400) e.discard();
             if (e.getTags().contains(Wave.TAG) && !Wave.ours(e)) e.discard();
             if (e.getTags().contains(TAG) && auras.values().stream().noneMatch(a -> a.glass.contains(e))) e.discard();
         });
