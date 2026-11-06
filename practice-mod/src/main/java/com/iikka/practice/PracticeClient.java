@@ -111,14 +111,17 @@ public class PracticeClient implements ClientModInitializer {
                 for (AbstractWidget b : new AbstractWidget[]{sp, mp, realms}) if (b != null) { b.visible = false; b.active = false; }
                 buttons.add(Button.builder(Component.literal("Play Multiplayer"), b -> mc.setScreen(new PracticeScreens.DuelScreen(screen))).bounds(bx, by, bw, 20).build());
                 buttons.add(Button.builder(Component.literal("Bot Practice"), b -> mc.setScreen(new PracticeScreens.BotScreen(screen))).bounds(bx, by + 24, bw, 20).build());
+                buttons.add(Button.builder(Component.literal("Kit Editor"), b -> openPracticeWorld(mc, new StartPayload("kits", "", "", "", ""), false)).bounds(bx, by + 48, bw, 20).build());
 
                 ScreenEvents.afterRender(screen).register((s, g, mx, my, delta) -> {
                     for (AbstractWidget b : Screens.getButtons(s)) {
-                        if (!b.visible) continue;
+                        // Only color normal Minecraft buttons with text (not Essential's or other mods' icon buttons)
+                        if (!b.visible || !(b instanceof Button) || !b.getClass().getName().startsWith("net.minecraft")) continue;
+                        String text = b.getMessage().getString();
+                        if (text.isEmpty() || text.startsWith("<")) continue;
                         int c = b.isHoveredOrFocused() ? 0x99FF2020 : 0x88B00000;
                         g.fill(b.getX() + 1, b.getY() + 1, b.getX() + b.getWidth() - 1, b.getY() + b.getHeight() - 1, c);
-                        if (!b.getMessage().getString().isEmpty())
-                            g.drawCenteredString(mc.font, b.getMessage(), b.getX() + b.getWidth() / 2, b.getY() + (b.getHeight() - 8) / 2, 0xFFFFFFFF);
+                        g.drawCenteredString(mc.font, b.getMessage(), b.getX() + b.getWidth() / 2, b.getY() + (b.getHeight() - 8) / 2, 0xFFFFFFFF);
                     }
                     g.drawString(mc.font, Component.literal("Olkku's Practice").withStyle(ChatFormatting.RED, ChatFormatting.BOLD), 4, 4, 0xFFFFFFFF);
                     if (!essentialLoaded())

@@ -25,7 +25,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -45,7 +44,7 @@ public class Practice implements ModInitializer {
     static boolean active;
     static MinecraftServer server;
 
-    static class BotFight { UUID player; Zombie bot; String kit, diff, loot, arena; int start; }
+    static class BotFight { UUID player; LivingEntity bot; int cooldown; String kit, diff, loot, arena; int start; }
     static class Duel { String arena; final List<UUID> players = new ArrayList<>(); final Map<UUID, String> kits = new HashMap<>(); int countdown = -1; boolean fighting; int start; }
     static final Map<UUID, BotFight> bots = new HashMap<>();
     static final Map<String, Duel> duels = new HashMap<>();
@@ -91,15 +90,13 @@ public class Practice implements ModInitializer {
         Kits.give(p, kit);
         tp(p, Arenas.spawn(arena, 0), -90);
 
-        Zombie z = EntityType.ZOMBIE.create(level, EntitySpawnReason.COMMAND);
-        if (z == null) return;
+        // A player-looking bot (mannequin) that we move and fight with ourselves
+        Entity made = EntityType.MANNEQUIN.create(level, EntitySpawnReason.COMMAND);
+        if (!(made instanceof LivingEntity z)) return;
         BlockPos s = Arenas.spawn(arena, 1);
         z.snapTo(s.getX() + 0.5, s.getY(), s.getZ() + 0.5, 90, 0);
-        z.setBaby(false);
         z.setCustomName(Component.literal("Olkku Bot (" + diff + ")").withStyle(ChatFormatting.RED));
         z.setCustomNameVisible(true);
-        z.setPersistenceRequired();
-        z.setCanPickUpLoot(false);
         z.addTag("olkku_bot");
         // Weapon from the kit, armor from the loot setting
         ItemStack[] k = Kits.defaults(kit);
@@ -113,16 +110,11 @@ public class Practice implements ModInitializer {
                 z.setItemSlot(slots[i], new ItemStack(it));
             }
         }
-        for (EquipmentSlot slot : EquipmentSlot.values()) z.setDropChance(slot, 0);
         int d = DIFFICULTY.indexOf(diff);
         set(z, Attributes.MAX_HEALTH, new double[]{20, 20, 30, 40}[d]);
-        set(z, Attributes.MOVEMENT_SPEED, new double[]{0.23, 0.28, 0.33, 0.38}[d]);
-        set(z, Attributes.ATTACK_DAMAGE, new double[]{1, 2, 3.5, 5}[d]);
-        set(z, Attributes.FOLLOW_RANGE, 64);
         set(z, Attributes.KNOCKBACK_RESISTANCE, new double[]{0, 0.1, 0.3, 0.5}[d]);
         z.setHealth(z.getMaxHealth());
         level.addFreshEntity(z);
-        z.setTarget(p);
 
         BotFight f = new BotFight();
         f.player = p.getUUID(); f.bot = z; f.kit = kit; f.diff = diff; f.loot = loot; f.arena = arena; f.start = server.getTickCount();
@@ -154,30 +146,57 @@ public class Practice implements ModInitializer {
         toLobby(p);
     }
 
+    static float weaponDamage(String kit) {
+        return switch (kit) { case "axe" -> 9; case "vanilla", "smp" -> 8; case "mace" -> 6; case "mace-spear" -> 7; case "sword" -> 7; default -> 6; };
+    }
+
     static void tickBots() {
         int t = server.getTickCount();
         for (BotFight f : new ArrayList<>(bots.values())) {
             ServerPlayer p = server.getPlayerList().getPlayer(f.player);
             if (p == null) { if (f.bot != null) f.bot.discard(); bots.remove(f.player); continue; }
-            Zombie z = f.bot;
-            if (z == null || z.isRemoved()) continue;
+            LivingEntity z = f.bot;
+            if (z == null || z.isRemoved() || !z.isAlive()) continue;
+            ServerLevel level = (ServerLevel) z.level();
             z.clearFire();
-            if (z.getTarget() != p) z.setTarget(p);
             int d = DIFFICULTY.indexOf(f.diff);
-            double dist = z.distanceTo(p);
-            // Better bots strafe, jump and crit
-            if (d >= 2 && dist < 5 && z.onGround() && t % (d == 3 ? 12 : 20) == 0) {
-                var side = p.position().subtract(z.position()).normalize().cross(new net.minecraft.world.phys.Vec3(0, 1, 0)).scale(z.getRandom().nextBoolean() ? 0.35 : -0.35);
-                z.setDeltaMovement(z.getDeltaMovement().add(side.x, 0.42, side.z));
-                z.hurtMarked = true;
+            var to = p.position().subtract(z.position());
+            double dist = Math.sqrt(to.x * to.x + to.z * to.z);
+            // Look at you
+            float yaw = (float) (Math.toDegrees(Math.atan2(to.z, to.x)) - 90);
+            z.setYRot(yaw); z.setYHeadRot(yaw); z.setYBodyRot(yaw);
+            z.setXRot((float) -Math.toDegrees(Math.atan2(p.getEyeY() - z.getEyeY(), Math.max(dist, 0.1))));
+            // Walk/sprint at you
+            double speed = new double[]{0.17, 0.23, 0.28, 0.32}[d];
+            var v = z.getDeltaMovement();
+            if (dist > 2.2) {
+                double nx = to.x / dist * speed, nz = to.z / dist * speed;
+                // Better bots strafe a bit
+                if (d >= 2 && dist < 6) { double side = Math.sin(t * 0.15) * speed * 0.6; nx += -to.z / dist * side; nz += to.x / dist * side; }
+                z.setDeltaMovement(nx, v.y, nz);
+                if (z.onGround() && (z.horizontalCollision || (d >= 2 && dist < 4 && t % 16 == 0))) z.setDeltaMovement(nx, 0.42, nz);
+            } else z.setDeltaMovement(v.x * 0.5, v.y, v.z * 0.5);
+            z.hurtMarked = true;
+            // Hit you
+            if (f.cooldown > 0) f.cooldown--;
+            if (dist < 3.2 && Math.abs(p.getY() - z.getY()) < 2.5 && f.cooldown <= 0) {
+                f.cooldown = new int[]{22, 15, 12, 10}[d];
+                z.swing(InteractionHand.MAIN_HAND);
+                float dmg = weaponDamage(f.kit) * new float[]{0.4f, 0.6f, 0.8f, 1.0f}[d];
+                boolean crit = !z.onGround() && z.getDeltaMovement().y < 0;
+                if (crit) dmg *= 1.5f;
+                if (p.hurtServer(level, z.damageSources().mobAttack(z), dmg)) {
+                    p.knockback(0.4, z.getX() - p.getX(), z.getZ() - p.getZ());
+                    p.hurtMarked = true;
+                    if (crit) level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, p.getX(), p.getY() + 1, p.getZ(), 10, 0.3, 0.5, 0.3, 0.1);
+                }
             }
             // Insane bots eat golden apples when low
             if (d == 3 && z.getHealth() < z.getMaxHealth() * 0.4 && t % 100 == 0) {
                 z.heal(8);
                 z.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 2400, 0));
-                z.level().playSound(null, z.getX(), z.getY(), z.getZ(), SoundEvents.GENERIC_EAT.value(), SoundSource.HOSTILE, 1f, 1f);
+                level.playSound(null, z.getX(), z.getY(), z.getZ(), SoundEvents.GENERIC_EAT.value(), SoundSource.HOSTILE, 1f, 1f);
             }
-            // Bot fell out somehow: bring it back
             if (z.getY() < Arenas.Y - 10) { BlockPos s = Arenas.spawn(f.arena, 1); z.teleportTo(s.getX() + 0.5, s.getY(), s.getZ() + 0.5); }
         }
     }
@@ -341,6 +360,7 @@ public class Practice implements ModInitializer {
         joining.remove(p.getUUID());
         String kit = Kits.NAMES.contains(s.kit()) ? s.kit() : "sword";
         String arena = Arenas.NAMES.contains(s.arena()) ? s.arena() : "classic";
+        if (s.mode().equals("kits")) { kitPicker(p, k -> Menus.editKit(p, k)); return; }
         if (s.mode().equals("bot")) startBot(p, kit, DIFFICULTY.contains(s.difficulty()) ? s.difficulty() : "normal", LOOT.contains(s.loot()) ? s.loot() : "iron", arena);
         else joinDuel(p, arena);
     }
