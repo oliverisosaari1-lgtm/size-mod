@@ -42,6 +42,7 @@ public class MobArmyMod implements ModInitializer {
         Entity e = dead.getType().create(level, EntitySpawnReason.MOB_SUMMONED);
         if (!(e instanceof Mob pet)) return;
         pet.snapTo(dead.getX(), dead.getY(), dead.getZ(), dead.getYRot(), 0);
+        for (String t : new ArrayList<>(pet.getTags())) if (t.startsWith(OWNER)) pet.removeTag(t);
         pet.addTag(PET);
         pet.addTag(OWNER + p.getUUID());
         pet.setPersistenceRequired();
@@ -102,9 +103,17 @@ public class MobArmyMod implements ModInitializer {
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> { if (e instanceof Mob m && e.getTags().contains(PET)) pets.add(m); });
         ServerEntityEvents.ENTITY_UNLOAD.register((e, level) -> { if (e instanceof Mob m) pets.remove(m); });
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-            if (!(entity instanceof Mob dead) || entity.getTags().contains(PET)) return;
-            if (dead.getType() == EntityType.ENDER_DRAGON) return;
-            if (source.getEntity() instanceof ServerPlayer p) revive(dead, p);
+            if (!(entity instanceof Mob dead) || dead.getType() == EntityType.ENDER_DRAGON) return;
+            ServerPlayer p = source.getEntity() instanceof ServerPlayer sp ? sp : null;
+            // A kill by one of your pets counts as your kill too
+            if (p == null && source.getEntity() != null) {
+                UUID boss = owner(source.getEntity());
+                if (boss != null) p = ((ServerLevel) dead.level()).getServer().getPlayerList().getPlayer(boss);
+            }
+            if (p == null) return;
+            // A pet only comes back if it was someone else's (then it switches to your army)
+            if (entity.getTags().contains(PET) && p.getUUID().equals(owner(entity))) return;
+            revive(dead, p);
         });
         // Your pets can't hurt you, and their arrows/explosions don't hurt you either
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((victim, source, amount) -> {
