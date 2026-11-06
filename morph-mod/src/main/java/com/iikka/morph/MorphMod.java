@@ -96,7 +96,7 @@ public class MorphMod implements ModInitializer {
     }
 
     public static void unmorph(ServerPlayer p, boolean message) {
-        removeDisguise(p);
+        samples.remove(p.getUUID());
         var attr = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
         if (attr != null) attr.removeModifier(HEALTH);
         setSize(p, null);
