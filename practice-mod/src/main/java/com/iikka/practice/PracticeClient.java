@@ -32,6 +32,7 @@ public class PracticeClient implements ClientModInitializer {
     public static KeyMapping zoom;
     static StartPayload pending;
     static boolean hostLan;
+    static int waitTicks;
 
     private static String key(AbstractWidget w) {
         return w.getMessage().getContents() instanceof TranslatableContents t ? t.getKey() : "";
@@ -76,18 +77,22 @@ public class PracticeClient implements ClientModInitializer {
             while (menu.consumeClick()) if (mc.player != null && ClientPlayNetworking.canSend(MenuPayload.TYPE)) ClientPlayNetworking.send(new MenuPayload());
         });
 
-        // After the practice world loads, start what was picked in the main menu
-        ClientPlayConnectionEvents.JOIN.register((h, sender, mc) -> mc.execute(() -> {
+        // After the practice world has fully loaded (no loading screen), start what was picked in the main menu.
+        // (Sending it earlier teleported you away while the world was still loading, which got stuck on "Loading terrain".)
+        ClientPlayConnectionEvents.JOIN.register((h, sender, mc) -> waitTicks = 40);
+        ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            if (pending == null || mc.player == null || mc.level == null || mc.screen != null) return;
+            if (waitTicks-- > 0) return;
             StartPayload p = pending;
             pending = null;
-            if (p == null) return;
             if (hostLan && mc.getSingleplayerServer() != null && !mc.getSingleplayerServer().isPublished()) {
                 int port = net.minecraft.util.HttpUtil.getAvailablePort();
-                if (mc.getSingleplayerServer().publishServer(net.minecraft.world.level.GameType.SURVIVAL, false, port) && mc.player != null)
+                if (mc.getSingleplayerServer().publishServer(net.minecraft.world.level.GameType.SURVIVAL, false, port))
                     mc.player.displayClientMessage(Component.literal("Your 1v1 world is open! Friends on your network can join it (port " + port + ").").withStyle(ChatFormatting.GOLD), false);
             }
             if (ClientPlayNetworking.canSend(StartPayload.TYPE)) ClientPlayNetworking.send(p);
-        }));
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((h, mc) -> pending = null);
 
         // Main menu: Play Multiplayer + Bot Practice, no Singleplayer/Multiplayer/Realms, red buttons
         ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {

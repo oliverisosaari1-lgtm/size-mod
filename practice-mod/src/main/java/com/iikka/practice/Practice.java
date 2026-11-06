@@ -51,6 +51,7 @@ public class Practice implements ModInitializer {
     static final Map<String, Duel> duels = new HashMap<>();
     static final Map<UUID, StartPayload> last = new HashMap<>();
     static final Map<UUID, int[]> score = new HashMap<>(); // wins, losses
+    static final Map<UUID, Integer> joining = new HashMap<>();
 
     static void say(ServerPlayer p, String text, ChatFormatting color) { p.displayClientMessage(Component.literal(text).withStyle(color), false); }
 
@@ -337,6 +338,7 @@ public class Practice implements ModInitializer {
 
     static void start(ServerPlayer p, StartPayload s) {
         if (!active) return;
+        joining.remove(p.getUUID());
         String kit = Kits.NAMES.contains(s.kit()) ? s.kit() : "sword";
         String arena = Arenas.NAMES.contains(s.arena()) ? s.arena() : "classic";
         if (s.mode().equals("bot")) startBot(p, kit, DIFFICULTY.contains(s.difficulty()) ? s.difficulty() : "normal", LOOT.contains(s.loot()) ? s.loot() : "iron", arena);
@@ -365,18 +367,28 @@ public class Practice implements ModInitializer {
         });
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> { for (BotFight f : bots.values()) if (f.bot != null) f.bot.discard(); bots.clear(); duels.clear(); active = false; });
 
-        ServerPlayConnectionEvents.JOIN.register((h, sender, s) -> s.execute(() -> {
-            if (!active) return;
-            toLobby(h.player);
-            say(h.player, "Welcome to Olkku's Practice! Press K to open the practice menu.", ChatFormatting.RED);
-        }));
+        // Send new players to the lobby a moment after they joined (not while their world is still loading)
+        ServerPlayConnectionEvents.JOIN.register((h, sender, s) -> s.execute(() -> { if (active) joining.put(h.player.getUUID(), s.getTickCount() + 40); }));
         ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> s.execute(() -> {
             BotFight f = bots.remove(h.player.getUUID());
             if (f != null && f.bot != null) f.bot.discard();
             leaveDuel(h.player);
         }));
 
-        ServerTickEvents.END_SERVER_TICK.register(s -> { if (active) { tickBots(); tickDuels(); } });
+        ServerTickEvents.END_SERVER_TICK.register(s -> {
+            if (!active) return;
+            for (var it = joining.entrySet().iterator(); it.hasNext(); ) {
+                var e = it.next();
+                if (s.getTickCount() < e.getValue()) continue;
+                it.remove();
+                ServerPlayer p = s.getPlayerList().getPlayer(e.getKey());
+                if (p == null || bots.containsKey(p.getUUID()) || duelOf(p.getUUID()) != null) continue;
+                toLobby(p);
+                say(p, "Welcome to Olkku's Practice! Press K to open the practice menu.", ChatFormatting.RED);
+            }
+            tickBots();
+            tickDuels();
+        });
 
         // Dying in a fight just ends the fight (totems still work)
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
