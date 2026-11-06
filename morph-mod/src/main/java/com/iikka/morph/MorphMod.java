@@ -120,6 +120,17 @@ public class MorphMod implements ModInitializer {
         }
     }
 
+    private static void unlock(ServerPlayer p, LivingEntity entity) {
+        String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
+        if (BANNED.contains(id)) return;
+        List<String> list = DATA.unlocked.computeIfAbsent(p.getUUID().toString(), k -> new ArrayList<>());
+        if (list.contains(id)) return;
+        list.add(id);
+        save();
+        p.sendSystemMessage(Component.literal("Unlocked morph: ").append(entity.getType().getDescription())
+            .append("! Press Right Shift (or /morph) to turn into it.").withStyle(ChatFormatting.LIGHT_PURPLE));
+    }
+
     private static Path file() { return server.getWorldPath(LevelResource.ROOT).resolve("morphs.json"); }
     private static void save() { try { Files.writeString(file(), GSON.toJson(DATA)); } catch (Exception ignored) { } }
 
