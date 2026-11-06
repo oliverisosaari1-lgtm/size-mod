@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "timestop",
+  "version": "${version}",
+  "name": "Time Stop",
+  "description": "Press G to stop time. Press G again to start it.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.iikka.timestop.TimeStopMod"],
+    "client": ["com.iikka.timestop.TimeStopClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

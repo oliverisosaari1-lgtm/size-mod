@@ -1,7 +1,7 @@
 name: Build size mod
 on:
   push:
-    paths-ignore: ['smp-mod/**', '.github/workflows/smp.yml', 'duel-mod/**', '.github/workflows/duel.yml', 'spider-mod/**', '.github/workflows/spider.yml', 'walk-mod/**', '.github/workflows/walk.yml', 'illusion-mod/**', '.github/workflows/illusion.yml', 'break-mod/**', '.github/workflows/break.yml', 'pvp-mod/**', '.github/workflows/pvp.yml', 'morph-mod/**', '.github/workflows/morph.yml']
+    paths-ignore: ['smp-mod/**', '.github/workflows/smp.yml', 'duel-mod/**', '.github/workflows/duel.yml', 'spider-mod/**', '.github/workflows/spider.yml', 'walk-mod/**', '.github/workflows/walk.yml', 'illusion-mod/**', '.github/workflows/illusion.yml', 'break-mod/**', '.github/workflows/break.yml', 'pvp-mod/**', '.github/workflows/pvp.yml', 'morph-mod/**', '.github/workflows/morph.yml', 'timestop-mod/**', '.github/workflows/timestop.yml']
   workflow_dispatch:
 permissions:
   contents: write
