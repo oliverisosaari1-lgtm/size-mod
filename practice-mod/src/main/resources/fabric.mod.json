@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "olkkuspractice",
+  "version": "${version}",
+  "name": "Olkku's Practice",
+  "description": "PvP practice: bot fights, 1v1 duels, kits, kit editor, arenas and zoom.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "icon": "assets/olkkuspractice/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.iikka.practice.Practice"],
+    "client": ["com.iikka.practice.PracticeClient"]
+  },
+  "mixins": ["olkkuspractice.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
