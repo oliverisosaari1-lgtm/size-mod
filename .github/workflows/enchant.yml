@@ -21,6 +21,10 @@ jobs:
         with:
           gradle-version: "9.2.0"
       - run: gradle build --stacktrace
+      - name: Show armor slot check
+        run: |
+          JAR=$(find ~/.gradle/caches .gradle -path '*minecraft*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/world/inventory/ArmorSlot.class" && echo "{}"' | head -1)
+          javap -c -p -cp "$JAR" net.minecraft.world.inventory.ArmorSlot | grep -A12 'mayPlace' | grep -i 'invoke' || true
       - name: Test that a server starts with the mod (mixins load)
         run: |
           JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
