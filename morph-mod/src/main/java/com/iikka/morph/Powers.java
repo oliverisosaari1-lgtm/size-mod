@@ -130,31 +130,23 @@ public class Powers {
                 p.setInvulnerable(false);
                 return 40;
             }
-            case "skeleton" -> { for (int i = 0; i < 3; i++) shoot(p, "arrow", 3.0); sound(p, SoundEvents.ARROW_SHOOT, 1f); return 8; }
-            case "stray" -> { for (int i = 0; i < 3; i++) shoot(p, "arrow", 3.0); LivingEntity t = lookEntity(p, 30); if (t != null) effect(t, MobEffects.SLOWNESS, 100, 2); sound(p, SoundEvents.STRAY_AMBIENT, 1f); return 10; }
-            case "bogged" -> { for (int i = 0; i < 3; i++) shoot(p, "arrow", 3.0); LivingEntity t = lookEntity(p, 30); if (t != null) effect(t, MobEffects.POISON, 100, 1); sound(p, SoundEvents.BOGGED_AMBIENT, 1f); return 10; }
-            case "pillager" -> { for (int i = 0; i < 6; i++) shoot(p, "arrow", 3.5); sound(p, SoundEvents.CROSSBOW_SHOOT, 1f); return 25; }
-            case "piglin" -> { p.addItem(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GOLD_INGOT, 1)); sound(p, SoundEvents.PIGLIN_ADMIRING_ITEM, 1f); return 100; }
-            case "piglin_brute" -> { effect(p, MobEffects.STRENGTH, 200, 2); push(p, look.scale(1.5).add(0, 0.2, 0)); sound(p, SoundEvents.PIGLIN_BRUTE_ANGRY, 1f); return 60; }
+            case "skeleton" -> { shoot(p, "arrow", 3.0); sound(p, SoundEvents.ARROW_SHOOT, 1f); return 8; }
+            case "stray" -> { shoot(p, "arrow", 3.0); LivingEntity t = lookEntity(p, 30); if (t != null) effect(t, MobEffects.SLOWNESS, 100, 2); sound(p, SoundEvents.STRAY_AMBIENT, 1f); return 10; }
+            case "bogged" -> { shoot(p, "arrow", 3.0); LivingEntity t = lookEntity(p, 30); if (t != null) effect(t, MobEffects.POISON, 100, 1); sound(p, SoundEvents.BOGGED_AMBIENT, 1f); return 10; }
+            case "pillager" -> { shoot(p, "arrow", 3.5); sound(p, SoundEvents.CROSSBOW_SHOOT, 1f); return 25; }
+            case "piglin" -> { shoot(p, "arrow", 3.0); sound(p, SoundEvents.CROSSBOW_SHOOT, 1f); return 25; }
             case "zombified_piglin" -> { near(p, 12, e -> { if (e instanceof net.minecraft.world.entity.Mob m && !(e instanceof net.minecraft.world.entity.player.Player)) { LivingEntity t = lookEntity(p, 30); if (t != null) m.setTarget(t); } }); sound(p, SoundEvents.ZOMBIFIED_PIGLIN_ANGRY, 1f); return 100; }
+            case "wither" -> { for (int i = 0; i < 3; i++) shoot(p, "wither_skull", 1.5); sound(p, SoundEvents.WITHER_SHOOT, 1f); return 10; }
             case "blaze" -> { for (int i = 0; i < 3; i++) shoot(p, "small_fireball", 1.5); sound(p, SoundEvents.BLAZE_SHOOT, 1f); return 15; }
             case "ghast" -> { shoot(p, "fireball", 1.5); sound(p, SoundEvents.GHAST_SHOOT, 1f); return 30; }
-            case "happy_ghast" -> { push(p, new Vec3(0, 1.2, 0)); effect(p, MobEffects.SLOW_FALLING, 200, 0); sound(p, SoundEvents.GHAST_AMBIENT, 1.5f); return 20; }
-            case "wither_skeleton" -> { shoot(p, "wither_skull", 1.5); sound(p, SoundEvents.WITHER_SHOOT, 1f); return 20; }
             case "snow_golem" -> { for (int i = 0; i < 5; i++) shoot(p, "snowball", 2.0); sound(p, SoundEvents.SNOW_GOLEM_SHOOT, 1f); return 5; }
             case "llama", "trader_llama" -> { shoot(p, "llama_spit", 2.0); sound(p, SoundEvents.LLAMA_SPIT, 1f); return 10; }
             case "breeze" -> { shoot(p, "breeze_wind_charge", 1.5); sound(p, SoundEvents.BREEZE_SHOOT, 1f); return 10; }
-            case "witch" -> { effect(p, MobEffects.REGENERATION, 200, 1); near(p, 6, e -> effect(e, MobEffects.WEAKNESS, 160, 1)); sound(p, SoundEvents.WITCH_DRINK, 1f); return 100; }
-            case "spider" -> {
-                BlockHitResult hit = lookBlock(p, 32);
-                if (hit.getType() == HitResult.Type.BLOCK) { BlockPos b = hit.getBlockPos().relative(hit.getDirection()); if (level.getBlockState(b).isAir()) level.setBlockAndUpdate(b, Blocks.COBWEB.defaultBlockState()); }
-                sound(p, SoundEvents.SPIDER_AMBIENT, 1f); return 20;
-            }
+            case "witch" -> { effect(p, MobEffects.REGENERATION, 200, 1); sound(p, SoundEvents.WITCH_DRINK, 1f); return 100; }
+            case "spider" -> { push(p, look.scale(1.3).add(0, 0.5, 0)); sound(p, SoundEvents.SPIDER_AMBIENT, 1f); return 20; }
             case "cave_spider" -> { push(p, look.scale(1.4).add(0, 0.5, 0)); LivingEntity t = lookEntity(p, 6); if (t != null) effect(t, MobEffects.POISON, 120, 1); sound(p, SoundEvents.SPIDER_STEP, 1.5f); return 20; }
             case "husk" -> { near(p, 5, e -> effect(e, MobEffects.HUNGER, 200, 2)); sound(p, SoundEvents.HUSK_AMBIENT, 1f); return 60; }
             case "drowned" -> { shoot(p, "trident", 2.5); sound(p, SoundEvents.DROWNED_SHOOT, 1f); return 20; }
-            case "zombie_villager" -> { p.heal(6); effect(p, MobEffects.ABSORPTION, 600, 1); sound(p, SoundEvents.ZOMBIE_VILLAGER_CURE, 1f); return 200; }
-            case "vindicator" -> { LivingEntity t = lookEntity(p, 5); if (t != null) t.hurtServer(level, p.damageSources().playerAttack(p), 14); sound(p, SoundEvents.VINDICATOR_CELEBRATE, 1f); return 30; }
             case "iron_golem" -> {
                 near(p, 5, e -> { e.hurtServer(level, p.damageSources().playerAttack(p), 12); e.setDeltaMovement(e.getDeltaMovement().add(0, 0.8, 0)); e.hurtMarked = true; });
                 particles(p, ParticleTypes.EXPLOSION, p.position(), 10, 2, 0); sound(p, SoundEvents.IRON_GOLEM_ATTACK, 0.8f); return 40;
@@ -179,42 +171,20 @@ public class Powers {
             case "illusioner" -> { effect(p, MobEffects.INVISIBILITY, 200, 0); near(p, 8, e -> effect(e, MobEffects.BLINDNESS, 100, 0)); sound(p, SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f); return 100; }
             case "vex" -> { p.setDeltaMovement(look.scale(1.6)); p.hurtMarked = true; effect(p, MobEffects.SLOW_FALLING, 60, 0); sound(p, SoundEvents.VEX_CHARGE, 1f); return 10; }
             case "shulker" -> { LivingEntity t = lookEntity(p, 24); if (t != null) effect(t, MobEffects.LEVITATION, 100, 1); sound(p, SoundEvents.SHULKER_SHOOT, 1f); return 30; }
-            case "endermite" -> { Vec3 to = p.position().add(Math.random() * 16 - 8, 0, Math.random() * 16 - 8); p.teleportTo(to.x, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, (int) to.x, (int) to.z), to.z); sound(p, SoundEvents.ENDERMITE_AMBIENT, 1f); return 15; }
-            case "silverfish" -> { for (int i = 0; i < 3; i++) { Entity f = type("silverfish").create(level, EntitySpawnReason.TRIGGERED); if (f != null) { f.setPos(p.getX(), p.getY(), p.getZ()); level.addFreshEntity(f); } } sound(p, SoundEvents.SILVERFISH_AMBIENT, 1f); return 100; }
             case "squid" -> { near(p, 6, e -> effect(e, MobEffects.BLINDNESS, 100, 0)); particles(p, ParticleTypes.SQUID_INK, p.position().add(0, 1, 0), 80, 1.5, 0.1); sound(p, SoundEvents.SQUID_SQUIRT, 1f); return 40; }
             case "glow_squid" -> { near(p, 12, e -> effect(e, MobEffects.GLOWING, 200, 0)); effect(p, MobEffects.NIGHT_VISION, 1200, 0); particles(p, ParticleTypes.GLOW_SQUID_INK, p.position().add(0, 1, 0), 80, 1.5, 0.1); sound(p, SoundEvents.GLOW_SQUID_SQUIRT, 1f); return 40; }
             case "pufferfish" -> { near(p, 4, e -> effect(e, MobEffects.POISON, 100, 1)); sound(p, SoundEvents.PUFFER_FISH_BLOW_UP, 1f); return 40; }
             case "bee" -> { LivingEntity t = lookEntity(p, 5); if (t != null) { effect(t, MobEffects.POISON, 200, 1); t.hurtServer(level, p.damageSources().playerAttack(p), 4); } push(p, new Vec3(0, 0.6, 0)); sound(p, SoundEvents.BEE_STING, 1f); return 30; }
-            case "parrot" -> { push(p, look.scale(1.2).add(0, 0.8, 0)); effect(p, MobEffects.SLOW_FALLING, 100, 0); sound(p, SoundEvents.PARROT_FLY, 1f); return 10; }
-            case "bat" -> { effect(p, MobEffects.NIGHT_VISION, 1200, 0); push(p, new Vec3(0, 0.9, 0)); effect(p, MobEffects.SLOW_FALLING, 60, 0); sound(p, SoundEvents.BAT_TAKEOFF, 1f); return 10; }
             case "phantom" -> { p.setDeltaMovement(look.scale(2.0)); p.hurtMarked = true; effect(p, MobEffects.SLOW_FALLING, 100, 0); sound(p, SoundEvents.PHANTOM_SWOOP, 1f); return 15; }
             case "allay" -> { for (Entity e : level.getEntities(p, p.getBoundingBox().inflate(16))) if (e instanceof net.minecraft.world.entity.item.ItemEntity it) it.setPos(p.getX(), p.getY(), p.getZ()); push(p, new Vec3(0, 0.6, 0)); sound(p, SoundEvents.ALLAY_ITEM_GIVEN, 1f); return 40; }
-            case "rabbit" -> { push(p, look.scale(0.5).add(0, 1.6, 0)); effect(p, MobEffects.SLOW_FALLING, 40, 0); sound(p, SoundEvents.RABBIT_JUMP, 1f); return 10; }
-            case "horse", "skeleton_horse", "zombie_horse" -> { effect(p, MobEffects.SPEED, 200, 3); push(p, look.scale(1.0).add(0, 0.8, 0)); sound(p, SoundEvents.HORSE_GALLOP, 1f); return 40; }
-            case "donkey", "mule" -> { effect(p, MobEffects.RESISTANCE, 200, 1); effect(p, MobEffects.SPEED, 200, 1); sound(p, SoundEvents.DONKEY_ANGRY, 1f); return 60; }
             case "camel" -> { push(p, look.scale(2.5).add(0, 0.3, 0)); sound(p, SoundEvents.CAMEL_DASH, 1f); return 40; }
             case "goat" -> { push(p, look.scale(2.0)); near(p, 2.5, e -> { e.setDeltaMovement(look.scale(2.5).add(0, 0.6, 0)); e.hurtMarked = true; e.hurtServer(level, p.damageSources().playerAttack(p), 4); }); sound(p, SoundEvents.GOAT_RAM_IMPACT, 1f); return 40; }
             case "frog" -> { LivingEntity t = lookEntity(p, 6); if (t != null && t.getMaxHealth() <= 10 && !(t instanceof net.minecraft.world.entity.player.Player)) t.kill(level); else push(p, look.scale(0.6).add(0, 1.3, 0)); sound(p, SoundEvents.FROG_TONGUE, 1f); return 20; }
-            case "slime" -> { push(p, new Vec3(0, 1.8, 0)); effect(p, MobEffects.SLOW_FALLING, 30, 0); sound(p, SoundEvents.SLIME_JUMP, 1f); return 15; }
-            case "magma_cube" -> { push(p, new Vec3(0, 1.6, 0)); near(p, 3, e -> e.igniteForSeconds(4)); effect(p, MobEffects.FIRE_RESISTANCE, 200, 0); sound(p, SoundEvents.MAGMA_CUBE_JUMP, 1f); return 20; }
-            case "wolf" -> { push(p, look.scale(1.8).add(0, 0.4, 0)); LivingEntity t = lookEntity(p, 4); if (t != null) t.hurtServer(level, p.damageSources().playerAttack(p), 8); sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 1f); return 25; }
-            case "fox" -> { effect(p, MobEffects.SPEED, 200, 2); effect(p, MobEffects.INVISIBILITY, 60, 0); sound(p, SoundEvents.FOX_SCREECH, 1f); return 60; }
-            case "cat" -> { near(p, 10, e -> { if (e.getType() == type("creeper") || e.getType() == type("phantom")) e.setDeltaMovement(e.position().subtract(p.position()).normalize().scale(2)); }); effect(p, MobEffects.JUMP_BOOST, 200, 2); sound(p, SoundEvents.CAT_HISS, 1f); return 40; }
-            case "ocelot" -> { effect(p, MobEffects.SPEED, 200, 4); sound(p, SoundEvents.OCELOT_AMBIENT, 1f); return 60; }
-            case "panda" -> { push(p, look.scale(1.5)); near(p, 2.5, e -> { e.setDeltaMovement(look.scale(1.5).add(0, 0.4, 0)); e.hurtMarked = true; }); sound(p, SoundEvents.PANDA_SNEEZE, 1f); return 30; }
-            case "polar_bear" -> { near(p, 4, e -> { e.hurtServer(level, p.damageSources().playerAttack(p), 9); effect(e, MobEffects.SLOWNESS, 100, 1); }); sound(p, SoundEvents.POLAR_BEAR_WARNING, 1f); return 40; }
             case "armadillo" -> { effect(p, MobEffects.RESISTANCE, 160, 3); effect(p, MobEffects.SLOWNESS, 160, 2); sound(p, SoundEvents.ARMADILLO_ROLL, 1f); return 100; }
-            case "dolphin" -> { effect(p, MobEffects.DOLPHINS_GRACE, 400, 0); push(p, look.scale(2.0)); sound(p, SoundEvents.DOLPHIN_PLAY, 1f); return 20; }
             case "axolotl" -> { effect(p, MobEffects.REGENERATION, 200, 1); effect(p, MobEffects.WATER_BREATHING, 1200, 0); sound(p, SoundEvents.AXOLOTL_SPLASH, 1f); return 100; }
-            case "turtle" -> { effect(p, MobEffects.RESISTANCE, 200, 2); effect(p, MobEffects.SLOWNESS, 200, 3); effect(p, MobEffects.WATER_BREATHING, 1200, 0); sound(p, SoundEvents.TURTLE_SHAMBLE, 1f); return 100; }
-            case "__fish_unused__" -> { effect(p, MobEffects.WATER_BREATHING, 1200, 0); effect(p, MobEffects.DOLPHINS_GRACE, 200, 0); push(p, look.scale(1.2)); sound(p, SoundEvents.FISH_SWIM, 1f); return 20; }
             case "guardian" -> { LivingEntity t = lookEntity(p, 16); if (t != null) t.hurtServer(level, p.damageSources().magic(), 8); sound(p, SoundEvents.GUARDIAN_ATTACK, 1f); return 30; }
             case "elder_guardian" -> { near(p, 16, e -> effect(e, MobEffects.MINING_FATIGUE, 600, 2)); sound(p, SoundEvents.ELDER_GUARDIAN_CURSE, 1f); return 100; }
-            case "strider" -> { effect(p, MobEffects.FIRE_RESISTANCE, 1200, 0); sound(p, SoundEvents.STRIDER_HAPPY, 1f); return 100; }
-            case "villager" -> { p.addItem(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.EMERALD, 1)); effect(p, MobEffects.HERO_OF_THE_VILLAGE, 1200, 0); sound(p, SoundEvents.VILLAGER_YES, 1f); return 200; }
             case "wandering_trader" -> { effect(p, MobEffects.INVISIBILITY, 300, 0); sound(p, SoundEvents.WANDERING_TRADER_DISAPPEARED, 1f); return 100; }
-            case "creaking" -> { near(p, 8, e -> effect(e, MobEffects.SLOWNESS, 100, 5)); sound(p, SoundEvents.CREAKING_FREEZE, 1f); return 60; }
-            case "copper_golem" -> { LivingEntity t = lookEntity(p, 20); if (t != null) { var bolt = type("lightning_bolt").create(level, EntitySpawnReason.TRIGGERED); if (bolt != null) { bolt.setPos(t.getX(), t.getY(), t.getZ()); level.addFreshEntity(bolt); } } sound(p, SoundEvents.COPPER_BREAK, 1f); return 60; }
             default -> {
                 // Simple mobs like pigs, sheep and fish have no superpower
                 p.sendSystemMessage(net.minecraft.network.chat.Component.literal("This mob has no superpower.").withStyle(net.minecraft.ChatFormatting.GRAY));

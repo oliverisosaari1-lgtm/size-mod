@@ -40,7 +40,7 @@ import java.util.*;
  */
 public class MorphMod implements ModInitializer {
     private static final String TAG = "morph_disguise";
-    private static final Set<String> BANNED = Set.of("minecraft:ender_dragon", "minecraft:wither", "minecraft:giant");
+    private static final Set<String> BANNED = Set.of("minecraft:ender_dragon", "minecraft:giant");
     private static MinecraftServer server;
 
     public static class SaveData {
