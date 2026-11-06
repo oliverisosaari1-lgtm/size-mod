@@ -11,7 +11,11 @@ public class AuraClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         KeyMapping key = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.aura.ring", InputConstants.KEY_G, KeyMapping.Category.MISC));
+        KeyMapping laser = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.aura.laser", InputConstants.KEY_B, KeyMapping.Category.MISC));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            // Hold B to fire the laser (after /laser)
+            if (mc.screen == null && mc.player != null && laser.isDown() && ClientPlayNetworking.canSend(LaserPayload.TYPE))
+                ClientPlayNetworking.send(new LaserPayload());
             // Hold G to keep shooting rings
             if (mc.screen == null && mc.player != null && key.isDown() && mc.player.tickCount % 2 == 0 && ClientPlayNetworking.canSend(RingPayload.TYPE))
                 ClientPlayNetworking.send(new RingPayload());

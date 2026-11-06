@@ -35,7 +35,8 @@ public class Toggles {
 
     static boolean has(String what, ServerPlayer p) { return on.getOrDefault(what, Set.of()).contains(p.getUUID()); }
 
-    static void leave(UUID id) { on.values().forEach(s -> s.remove(id)); removeSwords(id); }
+    static final Map<UUID, Integer> laserHeld = new HashMap<>();
+    static void leave(UUID id) { laserHeld.remove(id); Powers.rideMode.remove(id); on.values().forEach(s -> s.remove(id)); removeSwords(id); }
 
     private static BlockHitResult look(ServerPlayer p, double range) {
         Vec3 eye = p.getEyePosition();
@@ -146,7 +147,7 @@ public class Toggles {
                 }
                 if (t % 4 == 0) level.sendParticles(ParticleTypes.ENCHANT, p.getX(), p.getY() + 1, p.getZ(), 20, 3, 1, 3, 0.5);
             }
-            if (has("laser", p)) {
+            if (has("laser", p) && t - laserHeld.getOrDefault(p.getUUID(), -100) <= 3) {
                 Vec3 eye = p.getEyePosition(), dir = p.getLookAngle();
                 BlockHitResult hit = look(p, 60);
                 double len = hit.getType() == HitResult.Type.MISS ? 60 : hit.getLocation().distanceTo(eye);

@@ -142,25 +142,28 @@ public class Powers {
     // ---------- Dragon ride ----------
     private static final Map<UUID, Mob> rides = new HashMap<>();
 
-    static String dragonride(ServerPlayer p) {
+    static final Set<UUID> rideMode = new HashSet<>();
+
+    /** /dragonride: turn ride mode on/off. While on, right-click a mob to ride it. */
+    static boolean dragonride(ServerPlayer p) {
         Mob old = rides.remove(p.getUUID());
-        if (old != null) { stopRide(p, old); return "You got off."; }
-        Vec3 eye = p.getEyePosition(), end = eye.add(p.getLookAngle().scale(8));
-        Mob best = null;
-        double bd = 99;
-        for (Entity e : p.level().getEntities(p, p.getBoundingBox().inflate(8), e -> e instanceof Mob)) {
-            if (e.getTags().contains(TAG)) continue;
-            Optional<Vec3> on = e.getBoundingBox().inflate(0.5).clip(eye, end);
-            double d = e.distanceTo(p);
-            if (on.isPresent() && d < bd) { bd = d; best = (Mob) e; }
-        }
-        if (best == null) return null;
-        best.ejectPassengers();
-        p.startRiding(best, true, true);
-        best.setNoGravity(true);
-        best.setTarget(null);
-        rides.put(p.getUUID(), best);
-        return "You're riding it! Look where you want to fly, hold W to go. Sneak to get off.";
+        if (old != null) stopRide(p, old);
+        if (rideMode.remove(p.getUUID())) return false;
+        rideMode.add(p.getUUID());
+        return true;
+    }
+
+    static boolean mount(ServerPlayer p, Entity target) {
+        if (!rideMode.contains(p.getUUID()) || !(target instanceof Mob m) || target.getTags().contains(TAG) || p.getVehicle() == m) return false;
+        Mob old = rides.remove(p.getUUID());
+        if (old != null) stopRide(p, old);
+        m.ejectPassengers();
+        p.startRiding(m, true, true);
+        m.setNoGravity(true);
+        m.setTarget(null);
+        rides.put(p.getUUID(), m);
+        p.displayClientMessage(net.minecraft.network.chat.Component.literal("Riding! Look where you want to fly and hold W. Sneak to get off.").withStyle(net.minecraft.ChatFormatting.AQUA), false);
+        return true;
     }
 
     private static void stopRide(ServerPlayer p, Mob m) {
@@ -204,6 +207,6 @@ public class Powers {
         bits.forEach(b -> b.d.discard()); bits.clear();
         rocks.forEach(k -> k.d.discard()); rocks.clear();
         rains.clear();
-        rides.values().forEach(m -> m.setNoGravity(false)); rides.clear();
+        rides.values().forEach(m -> m.setNoGravity(false)); rides.clear(); rideMode.clear();
     }
 }

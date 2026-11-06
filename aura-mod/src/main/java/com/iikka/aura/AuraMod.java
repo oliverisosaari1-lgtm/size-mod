@@ -129,6 +129,10 @@ public class AuraMod implements ModInitializer {
     @Override
     public void onInitialize() {
         net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playC2S().register(RingPayload.TYPE, RingPayload.CODEC);
+        net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playC2S().register(LaserPayload.TYPE, LaserPayload.CODEC);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(LaserPayload.TYPE, (payload, ctx) -> Toggles.laserHeld.put(ctx.player().getUUID(), ctx.player().level().getServer().getTickCount()));
+        net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register((pl, w, h, target, hit) ->
+            pl instanceof ServerPlayer sp && h == net.minecraft.world.InteractionHand.MAIN_HAND && Powers.mount(sp, target) ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.PASS);
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(RingPayload.TYPE, (payload, ctx) -> Rings.shoot(ctx.player()));
         ServerTickEvents.END_SERVER_TICK.register(Rings::tick);
         ServerTickEvents.END_SERVER_TICK.register(Wave::tick);
@@ -143,58 +147,58 @@ public class AuraMod implements ModInitializer {
             d.register(Commands.literal("wave").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
                 boolean on = Wave.toggle(p);
-                msg(p, on ? "Wave on! A sea of diamond blocks ripples under you." : "Wave off.", on);
+                msg(p, on ? "Wave on: a sea of diamond blocks ripples under you and you float. Type /wave again to stop." : "Wave off.", on);
                 return 1;
             }));
             d.register(Commands.literal("blackhole").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                Powers.blackhole(p); msg(p, "Black hole! It sucks everything in for 15 seconds.", true); return 1;
+                Powers.blackhole(p); msg(p, "Black hole: a black ball where you look sucks in mobs and blocks for 15 seconds.", true); return 1;
             }));
             d.register(Commands.literal("meteor").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                Powers.meteor(p); msg(p, "Meteors incoming for 10 seconds!", true); return 1;
+                Powers.meteor(p); msg(p, "Meteors: flaming meteors rain around you and explode for 10 seconds.", true); return 1;
             }));
             d.register(Commands.literal("dragonride").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                String r = Powers.dragonride(p);
-                if (r == null) msg(p, "Look at a mob close to you first, then type /dragonride.", false); else msg(p, r, true);
+                boolean on = Powers.dragonride(p);
+                msg(p, on ? "Dragon ride on: right-click any mob to ride it. Look where you want to fly and hold W. Sneak to get off. Type /dragonride again to turn it off." : "Dragon ride off.", on);
                 return 1;
             }));
             d.register(Commands.literal("lightning").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                boolean on = Toggles.toggle("lightning", p); msg(p, on ? "Lightning on! It strikes wherever you look." : "Lightning off.", on); return 1;
+                boolean on = Toggles.toggle("lightning", p); msg(p, on ? "Lightning on: lightning strikes wherever you look. Type /lightning again to stop." : "Lightning off.", on); return 1;
             }));
             d.register(Commands.literal("magnet").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                boolean on = Toggles.toggle("magnet", p); msg(p, on ? "Magnet on! Items and mobs fly to you." : "Magnet off.", on); return 1;
+                boolean on = Toggles.toggle("magnet", p); msg(p, on ? "Magnet on: items and mobs near you fly to you. Type /magnet again to stop." : "Magnet off.", on); return 1;
             }));
             d.register(Commands.literal("laser").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                boolean on = Toggles.toggle("laser", p); msg(p, on ? "Laser on! It burns through blocks and mobs." : "Laser off.", on); return 1;
+                boolean on = Toggles.toggle("laser", p); msg(p, on ? "Laser on: hold B to shoot a laser from your eyes. It burns through blocks and mobs. Type /laser again to turn it off." : "Laser off.", on); return 1;
             }));
             d.register(Commands.literal("slime").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                boolean on = Toggles.toggle("slime", p); msg(p, on ? "Slime on! Everything you touch becomes bouncy." : "Slime off.", on); return 1;
+                boolean on = Toggles.toggle("slime", p); msg(p, on ? "Slime on: blocks you touch turn into slime and mobs you hit bounce up. Type /slime again to stop." : "Slime off.", on); return 1;
             }));
             d.register(Commands.literal("swords").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                boolean on = Toggles.toggle("swords", p); msg(p, on ? "Swords on! They spin around you and hit mobs." : "Swords off.", on); return 1;
+                boolean on = Toggles.toggle("swords", p); msg(p, on ? "Swords on: 6 swords spin around you and hit mobs that get close. Type /swords again to stop." : "Swords off.", on); return 1;
             }));
             d.register(Commands.literal("volcano").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
-                Toggles.volcano(p); msg(p, "A volcano is rising where you look!", true); return 1;
+                Toggles.volcano(p); msg(p, "Volcano: a volcano rises where you look and shoots lava for 15 seconds.", true); return 1;
             }));
             d.register(Commands.literal("ring").executes(ctx -> { Rings.openMenu(ctx.getSource().getPlayerOrException()); return 1; }));
             d.register(Commands.literal("aura").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
                 if (auras.containsKey(p.getUUID())) { removeAura(p.getUUID()); msg(p, "Aura off.", false); }
-                else { Aura a = new Aura(); auras.put(p.getUUID(), a); buildGlass(p, a); msg(p, "Aura on! Everything inside the glass breaks. Sneak to dig down.", true); }
+                else { Aura a = new Aura(); auras.put(p.getUUID(), a); buildGlass(p, a); msg(p, "Aura on: a glass sphere follows you and breaks every block inside it. Sneak to dig down. Type /aura again to stop.", true); }
                 return 1;
             }));
             d.register(Commands.literal("supertouch").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
                 if (superTouch.remove(p.getUUID())) msg(p, "Super touch off.", false);
-                else { superTouch.add(p.getUUID()); msg(p, "Super touch on! Break a block and all the same blocks touching it break too.", true); }
+                else { superTouch.add(p.getUUID()); msg(p, "Super touch on: break a block and all the same blocks touching it break too. Type /supertouch again to stop.", true); }
                 return 1;
             }));
         });

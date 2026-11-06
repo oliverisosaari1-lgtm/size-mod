@@ -122,7 +122,7 @@ public class Rings {
             if (!(pl instanceof ServerPlayer p)) return;
             if (slot >= 0 && slot < CHOICES.size()) {
                 pick.put(p.getUUID(), CHOICES.get(slot));
-                p.displayClientMessage(Component.literal("Ring picked! Hold G to shoot.").withStyle(ChatFormatting.AQUA), true);
+                p.displayClientMessage(Component.literal("Ring picked: hold G to shoot rings.").withStyle(ChatFormatting.AQUA), true);
                 p.closeContainer();
             }
         }
