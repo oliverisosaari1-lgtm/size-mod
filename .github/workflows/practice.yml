@@ -26,7 +26,7 @@ jobs:
           MC=$(find ~/.gradle/caches .gradle -path '*minecraft*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "assets/minecraft/textures/item/netherite_sword.png" && echo "{}"' | head -1)
           echo "MC=$MC"
           unzip -p "$MC" assets/minecraft/textures/item/netherite_sword.png > /tmp/sword.png
-          convert /tmp/sword.png -filter point -resize 128x128 src/main/resources/assets/olkkuspractice/icon.png
+          ffmpeg -v error -y -i /tmp/sword.png -vf scale=128:128:flags=neighbor src/main/resources/assets/olkkuspractice/icon.png || cp /tmp/sword.png src/main/resources/assets/olkkuspractice/icon.png
           CL=$(find ~/.gradle/caches .gradle -path '*minecraft*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' | head -1)
           javap -p -cp "$CL" net.minecraft.client.renderer.GameRenderer | grep getFov || echo "NO getFov"
           javap -p -cp "$CL" net.minecraft.client.gui.screens.Screen | grep renderPanorama || echo "NO renderPanorama"
