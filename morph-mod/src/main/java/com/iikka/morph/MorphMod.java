@@ -105,6 +105,7 @@ public class MorphMod implements ModInitializer {
         if (t == null) {
             t = board.addPlayerTeam("morph");
             t.setCollisionRule(Team.CollisionRule.PUSH_OTHER_TEAMS); // you don't bump into your own disguise
+            t.setSeeFriendlyInvisibles(false); // so you don't see a see-through you inside the mob
         }
         return t;
     }
@@ -150,6 +151,12 @@ public class MorphMod implements ModInitializer {
             e.setDeltaMovement(p.getDeltaMovement());
             e.setShiftKeyDown(p.isShiftKeyDown());
             if (Powers.noFallDamage(id)) p.fallDistance = 0;
+            // As a hostile mob, other hostile mobs leave you alone (unless you hit them first)
+            if (e.getType().getCategory() == MobCategory.MONSTER) {
+                for (Entity near : p.level().getEntities(p, p.getBoundingBox().inflate(40))) {
+                    if (near instanceof Mob m && m.getTarget() == p && m.getType().getCategory() == MobCategory.MONSTER && m.getLastHurtByMob() != p) m.setTarget(null);
+                }
+            }
             if (s.getTickCount() % 20 == 0) {
                 setHealth(p, e);
                 Powers.traits(p, id);
