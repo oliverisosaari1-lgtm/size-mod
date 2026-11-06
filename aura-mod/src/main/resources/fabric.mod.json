@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "aura",
+  "version": "${version}",
+  "name": "Illusion Powers",
+  "description": "/aura: a glass sphere around you that breaks everything it touches. /supertouch: break one block, all the same blocks touching it break too.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.iikka.aura.AuraMod"]
+  },
+  "accessWidener": "aura.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
