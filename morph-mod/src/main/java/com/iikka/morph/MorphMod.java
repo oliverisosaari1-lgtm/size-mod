@@ -102,7 +102,7 @@ public class MorphMod implements ModInitializer {
         setSize(p, null);
         if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
         if (DATA.current.remove(p.getUUID().toString()) != null) save();
-        p.removeEffect(MobEffects.INVISIBILITY);
+        p.setInvisible(p.hasEffect(MobEffects.INVISIBILITY));
         if (message) p.sendSystemMessage(Component.literal("You're normal again.").withStyle(ChatFormatting.GRAY));
     }
 
@@ -163,6 +163,7 @@ public class MorphMod implements ModInitializer {
             if (e instanceof LivingEntity le) { le.setYHeadRot(p.getYHeadRot()); le.setYBodyRot(p.yBodyRot); }
             e.setDeltaMovement(p.getDeltaMovement());
             e.setShiftKeyDown(p.isShiftKeyDown());
+            p.setInvisible(true); // hide you (no potion effect), only the mob is seen
             if (Powers.noFallDamage(id)) p.fallDistance = 0;
             // As a hostile mob, other hostile mobs leave you alone (unless you hit them first)
             if (e.getType().getCategory() == MobCategory.MONSTER) {
@@ -174,7 +175,6 @@ public class MorphMod implements ModInitializer {
                 setHealth(p, e);
                 setSize(p, e);
                 Powers.traits(p, id);
-                p.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, false));
                 // Hide your armor and held items from others, so only the mob is seen
                 List<Pair<EquipmentSlot, ItemStack>> empty = new ArrayList<>();
                 for (EquipmentSlot slot : EquipmentSlot.values()) empty.add(Pair.of(slot, ItemStack.EMPTY));
