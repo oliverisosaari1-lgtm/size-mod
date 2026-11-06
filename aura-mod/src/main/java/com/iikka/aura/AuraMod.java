@@ -131,7 +131,14 @@ public class AuraMod implements ModInitializer {
         net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playC2S().register(RingPayload.TYPE, RingPayload.CODEC);
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(RingPayload.TYPE, (payload, ctx) -> Rings.shoot(ctx.player()));
         ServerTickEvents.END_SERVER_TICK.register(Rings::tick);
+        ServerTickEvents.END_SERVER_TICK.register(Wave::tick);
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {
+            d.register(Commands.literal("wave").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                boolean on = Wave.toggle(p);
+                msg(p, on ? "Wave on! A sea of diamond blocks ripples under you." : "Wave off.", on);
+                return 1;
+            }));
             d.register(Commands.literal("ring").executes(ctx -> { Rings.openMenu(ctx.getSource().getPlayerOrException()); return 1; }));
             d.register(Commands.literal("aura").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -150,11 +157,12 @@ public class AuraMod implements ModInitializer {
             if (player instanceof ServerPlayer p && superTouch.contains(p.getUUID())) veinMine((ServerLevel) world, p, pos, state);
         });
         ServerTickEvents.END_SERVER_TICK.register(AuraMod::tick);
-        ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> { removeAura(h.player.getUUID()); superTouch.remove(h.player.getUUID()); });
-        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { Rings.clear(); for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
+        ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> { removeAura(h.player.getUUID()); Wave.remove(h.player.getUUID()); superTouch.remove(h.player.getUUID()); });
+        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { Rings.clear(); Wave.clear(); for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
         // Leftover glass from a crash is cleaned up
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
             if (e.getTags().contains(Rings.TAG) && e.tickCount > 100) e.discard();
+            if (e.getTags().contains(Wave.TAG) && !Wave.ours(e)) e.discard();
             if (e.getTags().contains(TAG) && auras.values().stream().noneMatch(a -> a.glass.contains(e))) e.discard();
         });
     }

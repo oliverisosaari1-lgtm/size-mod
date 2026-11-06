@@ -3,7 +3,7 @@
   "id": "aura",
   "version": "${version}",
   "name": "Illusion Powers",
-  "description": "/aura: a glass sphere around you that breaks everything it touches. /supertouch: break one block, all the same blocks touching it break too. /ring: pick a ring, hold G to shoot rings.",
+  "description": "/aura: a glass sphere around you that breaks everything it touches. /supertouch: break one block, all the same blocks touching it break too. /ring: pick a ring, hold G to shoot rings. /wave: a rippling sea of diamond blocks under you.",
   "authors": ["Iikka"],
   "license": "MIT",
   "environment": "*",
