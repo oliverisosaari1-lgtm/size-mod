@@ -46,9 +46,14 @@ public class WornItemLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
     public void submit(PoseStack pose, SubmitNodeCollector out, int light, AvatarRenderState s, float yRot, float xRot) {
         try {
             PlayerModel m = getParentModel();
-            if (custom(s.chestEquipment)) draw(pose, out, light, s.chestEquipment, m.body, 0.375f, 0.55f);
-            if (custom(s.legsEquipment)) { draw(pose, out, light, s.legsEquipment, m.rightLeg, 0.3f, 0.35f); draw(pose, out, light, s.legsEquipment, m.leftLeg, 0.3f, 0.35f); }
-            if (custom(s.feetEquipment)) { draw(pose, out, light, s.feetEquipment, m.rightLeg, 0.62f, 0.3f); draw(pose, out, light, s.feetEquipment, m.leftLeg, 0.62f, 0.3f); }
+            var level = net.minecraft.client.Minecraft.getInstance().level;
+            if (level == null || !(level.getEntity(s.id) instanceof net.minecraft.world.entity.LivingEntity e)) return;
+            ItemStack chest = e.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+            ItemStack legs = e.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.LEGS);
+            ItemStack feet = e.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET);
+            if (custom(chest)) draw(pose, out, light, chest, m.body, 0.375f, 0.55f);
+            if (custom(legs)) { draw(pose, out, light, legs, m.rightLeg, 0.3f, 0.35f); draw(pose, out, light, legs, m.leftLeg, 0.3f, 0.35f); }
+            if (custom(feet)) { draw(pose, out, light, feet, m.rightLeg, 0.62f, 0.3f); draw(pose, out, light, feet, m.leftLeg, 0.62f, 0.3f); }
         } catch (Throwable ignored) { }
     }
 }

@@ -29,26 +29,6 @@ public class CrouchEnchantMod implements ModInitializer {
             boolean was = sneaking.contains(p.getUUID());
             if (now) sneaking.add(p.getUUID()); else sneaking.remove(p.getUUID());
             if (now && !was) enchant(p);
-            swordAnything(p);
-        }
-    }
-
-    private static final net.minecraft.resources.Identifier DMG = net.minecraft.resources.Identifier.fromNamespaceAndPath("crouchenchant", "sword_damage");
-    private static final net.minecraft.resources.Identifier SPD = net.minecraft.resources.Identifier.fromNamespaceAndPath("crouchenchant", "sword_speed");
-    /** Any item without its own attack stats hits like a diamond sword. */
-    private static void swordAnything(ServerPlayer p) {
-        ItemStack stack = p.getMainHandItem();
-        boolean sword = !stack.isEmpty() && stack.getOrDefault(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS,
-            net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY).modifiers().isEmpty();
-        var dmg = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
-        var spd = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED);
-        if (dmg == null || spd == null) return;
-        if (sword) {
-            dmg.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(DMG, 6, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
-            spd.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(SPD, -2.4, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
-        } else {
-            if (dmg.getModifier(DMG) != null) dmg.removeModifier(DMG);
-            if (spd.getModifier(SPD) != null) spd.removeModifier(SPD);
         }
     }
 
