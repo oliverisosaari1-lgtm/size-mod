@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.iikka.morph.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["RenderAsMobMixin"],
+  "injectors": { "defaultRequire": 0 }
+}

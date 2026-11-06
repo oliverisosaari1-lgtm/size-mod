@@ -35,8 +35,8 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * Morphing: you become invisible and a copy of the mob follows you everywhere,
- * so everyone (and you in third person) sees the mob. Works for friends without the mod too.
+ * Morphing: you are drawn as the mob itself (the mod on each client swaps your model).
+ * The server sets your size, health and powers and tells clients who is what.
  */
 public class MorphMod implements ModInitializer {
     private static final String TAG = "morph_disguise";
@@ -49,7 +49,7 @@ public class MorphMod implements ModInitializer {
     }
     private static SaveData DATA = new SaveData();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Map<UUID, Entity> disguises = new HashMap<>();
+    private static final Map<UUID, Entity> samples = new HashMap<>(); // a mob (not in the world) used to read size and health
     private static final Map<UUID, Long> cooldown = new HashMap<>();
     private static final Identifier HEALTH = Identifier.fromNamespaceAndPath("morph", "health");
     private static final Identifier SIZE = Identifier.fromNamespaceAndPath("morph", "size");
@@ -88,7 +88,7 @@ public class MorphMod implements ModInitializer {
     }
 
     public static void morph(ServerPlayer p, String id) {
-        removeDisguise(p);
+        samples.remove(p.getUUID());
         DATA.current.put(p.getUUID().toString(), id);
         save();
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id));
@@ -102,43 +102,26 @@ public class MorphMod implements ModInitializer {
         setSize(p, null);
         if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
         if (DATA.current.remove(p.getUUID().toString()) != null) save();
-        p.setInvisible(p.hasEffect(MobEffects.INVISIBILITY));
+        sync();
         if (message) p.sendSystemMessage(Component.literal("You're normal again.").withStyle(ChatFormatting.GRAY));
     }
 
-    private static void removeDisguise(ServerPlayer p) {
-        Entity e = disguises.remove(p.getUUID());
-        if (e != null) e.discard();
+    /** Tell every client (with the mod) who is morphed into what. */
+    private static void sync() {
+        Map<UUID, String> map = new HashMap<>();
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) { String id = current(p); if (id != null) map.put(p.getUUID(), id); }
+        SyncPayload pay = new SyncPayload(map);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) if (ServerPlayNetworking.canSend(p, SyncPayload.TYPE)) ServerPlayNetworking.send(p, pay);
     }
 
-    private static PlayerTeam team() {
-        var board = server.getScoreboard();
-        PlayerTeam t = board.getPlayerTeam("morph");
-        if (t == null) {
-            t = board.addPlayerTeam("morph");
-            t.setCollisionRule(Team.CollisionRule.PUSH_OTHER_TEAMS); // you don't bump into your own disguise
-            t.setSeeFriendlyInvisibles(false); // so you don't see a see-through you inside the mob
+    private static Entity sample(ServerPlayer p, String id) {
+        Entity e = samples.get(p.getUUID());
+        if (e == null || e.level() != p.level()) {
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id));
+            e = type.create(p.level(), EntitySpawnReason.COMMAND);
+            if (e == null) return null;
+            samples.put(p.getUUID(), e);
         }
-        return t;
-    }
-
-    private static Entity spawnDisguise(ServerPlayer p, String id) {
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id));
-        Entity e = type.create(p.level(), EntitySpawnReason.COMMAND);
-        if (e == null) return null;
-        e.addTag(TAG);
-        e.setPos(p.getX(), p.getY(), p.getZ());
-        e.setInvulnerable(true);
-        e.setSilent(true);
-        e.setNoGravity(true);
-        e.setCustomName(p.getName());
-        e.setCustomNameVisible(true);
-        if (e instanceof Mob m) { m.setNoAi(true); m.setPersistenceRequired(); }
-        disguises.put(p.getUUID(), e); // before adding, so the "remove old disguises" check doesn't delete it
-        p.level().addFreshEntity(e);
-        PlayerTeam t = team();
-        server.getScoreboard().addPlayerToTeam(e.getScoreboardName(), t);
-        server.getScoreboard().addPlayerToTeam(p.getScoreboardName(), t);
         return e;
     }
 
@@ -146,25 +129,16 @@ public class MorphMod implements ModInitializer {
         for (ServerPlayer p : s.getPlayerList().getPlayers()) {
             String id = current(p);
             if (id == null) continue;
-            Entity e = disguises.get(p.getUUID());
-            if (e == null || e.isRemoved() || e.level() != p.level()) {
-                if (e != null) e.discard();
-                e = spawnDisguise(p, id);
+            Entity e = samples.get(p.getUUID());
+            if (e == null || e.level() != p.level()) {
+                e = sample(p, id);
                 if (e == null) continue;
-                disguises.put(p.getUUID(), e);
                 boolean full = p.getHealth() >= p.getMaxHealth();
                 setHealth(p, e);
                 setSize(p, e);
                 if (full) p.setHealth(p.getMaxHealth());
+                sync();
             }
-            // Follow the player
-            e.setPos(p.getX(), p.getY(), p.getZ());
-            e.setYRot(p.getYRot());
-            e.setXRot(p.getXRot());
-            if (e instanceof LivingEntity le) { le.setYHeadRot(p.getYHeadRot()); le.setYBodyRot(p.yBodyRot); }
-            e.setDeltaMovement(p.getDeltaMovement());
-            e.setShiftKeyDown(p.isShiftKeyDown());
-            p.setInvisible(true); // hide you (no potion effect), only the mob is seen
             if (Powers.noFallDamage(id)) p.fallDistance = 0;
             // As a hostile mob, other hostile mobs leave you alone (unless you hit them first)
             if (e.getType().getCategory() == MobCategory.MONSTER) {
@@ -176,11 +150,6 @@ public class MorphMod implements ModInitializer {
                 setHealth(p, e);
                 setSize(p, e);
                 Powers.traits(p, id);
-                // Hide your armor and held items from others, so only the mob is seen
-                List<Pair<EquipmentSlot, ItemStack>> empty = new ArrayList<>();
-                for (EquipmentSlot slot : EquipmentSlot.values()) empty.add(Pair.of(slot, ItemStack.EMPTY));
-                var packet = new ClientboundSetEquipmentPacket(p.getId(), empty);
-                for (ServerPlayer other : s.getPlayerList().getPlayers()) if (other != p && other.level() == p.level()) other.connection.send(packet);
             }
         }
     }
@@ -192,14 +161,15 @@ public class MorphMod implements ModInitializer {
             try { if (Files.exists(file())) DATA = GSON.fromJson(Files.readString(file()), SaveData.class); } catch (Exception ignored) { }
             if (DATA == null) DATA = new SaveData();
         });
-        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { for (Entity e : disguises.values()) e.discard(); disguises.clear(); save(); });
+        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { samples.clear(); save(); });
 
-        // Old disguises left in the world (after a crash) are removed
+        // Old follower mobs from older versions of this mod are removed
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
-            if (entity.getTags().contains(TAG) && !disguises.containsValue(entity)) entity.discard();
+            if (entity.getTags().contains(TAG)) entity.discard();
         });
 
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> removeDisguise(handler.player));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> s.execute(() -> { samples.remove(handler.player.getUUID()); handler.player.setInvisible(handler.player.hasEffect(MobEffects.INVISIBILITY)); sync(); }));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> { samples.remove(handler.player.getUUID()); s.execute(MorphMod::sync); });
 
         // Killing a mob unlocks it
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
@@ -229,6 +199,7 @@ public class MorphMod implements ModInitializer {
         });
 
         PayloadTypeRegistry.playC2S().register(OpenPayload.TYPE, OpenPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(SyncPayload.TYPE, SyncPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(PowerPayload.TYPE, PowerPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(PowerPayload.TYPE, (payload, ctx) -> {
             ServerPlayer p = ctx.player();

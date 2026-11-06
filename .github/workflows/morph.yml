@@ -21,6 +21,12 @@ jobs:
         with:
           gradle-version: "9.2.0"
       - run: gradle build --stacktrace
+      - name: Check mixin target exists
+        run: |
+          JAR=$(find ~/.gradle/caches .gradle -path '*minecraft*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/entity/EntityRenderDispatcher.class" && echo "{}"' | head -1)
+          echo "JAR=$JAR"
+          javap -p -cp "$JAR" net.minecraft.client.renderer.entity.EntityRenderDispatcher | grep extractEntity
+          javap -p -cp "$JAR" net.minecraft.client.renderer.entity.EntityRenderDispatcher | grep -q 'extractEntity(E, float)'
       - name: Publish release
         if: github.ref == 'refs/heads/main'
         env:
