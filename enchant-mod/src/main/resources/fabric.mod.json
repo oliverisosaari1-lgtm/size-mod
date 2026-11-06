@@ -8,7 +8,8 @@
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.iikka.crouchenchant.CrouchEnchantMod"]
+    "main": ["com.iikka.crouchenchant.CrouchEnchantMod"],
+    "client": ["com.iikka.crouchenchant.CrouchEnchantClient"]
   },
   "depends": {
     "fabricloader": ">=0.16.0",
