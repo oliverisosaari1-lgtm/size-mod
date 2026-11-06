@@ -3,12 +3,13 @@
   "id": "aura",
   "version": "${version}",
   "name": "Illusion Powers",
-  "description": "/aura: a glass sphere around you that breaks everything it touches. /supertouch: break one block, all the same blocks touching it break too.",
+  "description": "/aura: a glass sphere around you that breaks everything it touches. /supertouch: break one block, all the same blocks touching it break too. /ring: pick a ring, hold G to shoot rings.",
   "authors": ["Iikka"],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.iikka.aura.AuraMod"]
+    "main": ["com.iikka.aura.AuraMod"],
+    "client": ["com.iikka.aura.AuraClient"]
   },
   "accessWidener": "aura.accesswidener",
   "depends": {

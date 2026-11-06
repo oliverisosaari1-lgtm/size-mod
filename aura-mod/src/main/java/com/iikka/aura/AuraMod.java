@@ -128,7 +128,11 @@ public class AuraMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playC2S().register(RingPayload.TYPE, RingPayload.CODEC);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(RingPayload.TYPE, (payload, ctx) -> Rings.shoot(ctx.player()));
+        ServerTickEvents.END_SERVER_TICK.register(Rings::tick);
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {
+            d.register(Commands.literal("ring").executes(ctx -> { Rings.openMenu(ctx.getSource().getPlayerOrException()); return 1; }));
             d.register(Commands.literal("aura").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
                 if (auras.containsKey(p.getUUID())) { removeAura(p.getUUID()); msg(p, "Aura off.", false); }
@@ -147,9 +151,10 @@ public class AuraMod implements ModInitializer {
         });
         ServerTickEvents.END_SERVER_TICK.register(AuraMod::tick);
         ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> { removeAura(h.player.getUUID()); superTouch.remove(h.player.getUUID()); });
-        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
+        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { Rings.clear(); for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
         // Leftover glass from a crash is cleaned up
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
+            if (e.getTags().contains(Rings.TAG) && e.tickCount > 100) e.discard();
             if (e.getTags().contains(TAG) && auras.values().stream().noneMatch(a -> a.glass.contains(e))) e.discard();
         });
     }
