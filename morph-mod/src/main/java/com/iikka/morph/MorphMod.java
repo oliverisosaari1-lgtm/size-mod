@@ -90,6 +90,30 @@ public class MorphMod implements ModInitializer {
         }
     }
 
+    private static final Identifier SPEED = Identifier.fromNamespaceAndPath("morph", "speed");
+    /** Cats and ocelots sprint super fast. */
+    private static void catSprint(ServerPlayer p, String id) {
+        var attr = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+        if (attr == null) return;
+        boolean fast = p.isSprinting() && ("minecraft:cat".equals(id) || "minecraft:ocelot".equals(id));
+        if (fast) attr.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(SPEED, 1.5,
+            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+        else if (attr.getModifier(SPEED) != null) attr.removeModifier(SPEED);
+    }
+
+    /** Vanilla weaknesses: water hurts endermen/blazes/snow golems, undead burn in the sun. */
+    private static void weakness(ServerPlayer p, String id, int tick) {
+        if (tick % 10 != 0 || p.isCreative() || p.isSpectator()) return;
+        ServerLevel level = (ServerLevel) p.level();
+        if (Set.of("enderman", "blaze", "snow_golem").contains(id) && p.isInWaterOrRain())
+            p.hurtServer(level, p.damageSources().drown(), 1);
+        if (Set.of("zombie", "zombie_villager", "skeleton", "stray", "bogged", "phantom", "drowned").contains(id)
+            && level.isBrightOutside() && !p.isInWaterOrRain() && !p.isInPowderSnow && p.getLightLevelDependentMagicValue() > 0.5f
+            && level.canSeeSky(net.minecraft.core.BlockPos.containing(p.getX(), p.getEyeY(), p.getZ()))
+            && p.getItemBySlot(EquipmentSlot.HEAD).isEmpty())
+            p.igniteForSeconds(8);
+    }
+
     private static Path file() { return server.getWorldPath(LevelResource.ROOT).resolve("morphs.json"); }
     private static void save() { try { Files.writeString(file(), GSON.toJson(DATA)); } catch (Exception ignored) { } }
 
@@ -143,7 +167,9 @@ public class MorphMod implements ModInitializer {
         for (ServerPlayer p : s.getPlayerList().getPlayers()) {
             String id = current(p);
             setFlight(p, Powers.flies(id));
+            catSprint(p, id);
             if (id == null) continue;
+            weakness(p, id.replace("minecraft:", ""), s.getTickCount());
             Entity e = samples.get(p.getUUID());
             if (e == null || e.level() != p.level()) {
                 e = sample(p, id);
