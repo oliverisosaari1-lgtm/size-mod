@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "crouchenchant",
+  "version": "${version}",
+  "name": "Crouch Enchant",
+  "description": "Crouch to give the item in your hand a random enchant. Any enchant, any item, no level limit.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.iikka.crouchenchant.CrouchEnchantMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
