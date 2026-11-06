@@ -102,27 +102,22 @@ public class MorphMod implements ModInitializer {
     }
 
     /** Vanilla weaknesses: water hurts endermen/blazes/snow golems, undead burn in the sun. */
+    private static final Set<UUID> sunBurning = new HashSet<>();
     private static void weakness(ServerPlayer p, String id, int tick) {
-        if (tick % 10 != 0 || p.isCreative() || p.isSpectator()) return;
+        if (p.isCreative() || p.isSpectator()) return;
         ServerLevel level = (ServerLevel) p.level();
-        if (Set.of("enderman", "blaze", "snow_golem").contains(id) && p.isInWaterOrRain())
+        if (tick % 10 == 0 && Set.of("enderman", "blaze", "snow_golem").contains(id) && p.isInWaterOrRain())
             p.hurtServer(level, p.damageSources().drown(), 1);
-        if (Set.of("zombie", "zombie_villager", "skeleton", "stray", "bogged", "phantom", "drowned").contains(id)
+        boolean sun = Set.of("zombie", "zombie_villager", "skeleton", "stray", "bogged", "phantom", "drowned").contains(id)
             && level.isBrightOutside() && !p.isInWaterOrRain() && !p.isInPowderSnow && p.getLightLevelDependentMagicValue() > 0.5f
             && level.canSeeSky(net.minecraft.core.BlockPos.containing(p.getX(), p.getEyeY(), p.getZ()))
-            && p.getItemBySlot(EquipmentSlot.HEAD).isEmpty())
-            p.igniteForSeconds(8);
-    }
-
-    private static void unlock(ServerPlayer p, LivingEntity entity) {
-        String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
-        if (BANNED.contains(id)) return;
-        List<String> list = DATA.unlocked.computeIfAbsent(p.getUUID().toString(), k -> new ArrayList<>());
-        if (list.contains(id)) return;
-        list.add(id);
-        save();
-        p.sendSystemMessage(Component.literal("Unlocked morph: ").append(entity.getType().getDescription())
-            .append("! Press Right Shift (or /morph) to turn into it.").withStyle(ChatFormatting.LIGHT_PURPLE));
+            && p.getItemBySlot(EquipmentSlot.HEAD).isEmpty();
+        if (sun) {
+            if (tick % 10 == 0) p.igniteForSeconds(8);
+            sunBurning.add(p.getUUID());
+        } else if (sunBurning.remove(p.getUUID()) && !p.isInLava()) {
+            p.clearFire(); // in shade: the sun fire stops right away
+        }
     }
 
     private static Path file() { return server.getWorldPath(LevelResource.ROOT).resolve("morphs.json"); }
