@@ -78,6 +78,18 @@ public class MorphMod implements ModInitializer {
         if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
     }
 
+    private static final Set<UUID> flyers = new HashSet<>();
+    /** Flying mobs let you fly. Taken away again when you stop being one (not in creative/spectator). */
+    private static void setFlight(ServerPlayer p, boolean fly) {
+        var a = p.getAbilities();
+        if (fly) {
+            flyers.add(p.getUUID());
+            if (!a.mayfly) { a.mayfly = true; p.onUpdateAbilities(); }
+        } else if (flyers.remove(p.getUUID()) && !p.isCreative() && !p.isSpectator()) {
+            a.mayfly = false; a.flying = false; p.onUpdateAbilities();
+        }
+    }
+
     private static Path file() { return server.getWorldPath(LevelResource.ROOT).resolve("morphs.json"); }
     private static void save() { try { Files.writeString(file(), GSON.toJson(DATA)); } catch (Exception ignored) { } }
 
@@ -130,6 +142,7 @@ public class MorphMod implements ModInitializer {
     private static void tick(MinecraftServer s) {
         for (ServerPlayer p : s.getPlayerList().getPlayers()) {
             String id = current(p);
+            setFlight(p, Powers.flies(id));
             if (id == null) continue;
             Entity e = samples.get(p.getUUID());
             if (e == null || e.level() != p.level()) {

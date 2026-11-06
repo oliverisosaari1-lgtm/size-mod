@@ -86,6 +86,12 @@ public class Powers {
         p.hurtMarked = true;
     }
 
+    /** Mobs that fly in vanilla: you can fly like in creative (double-tap space). */
+    public static boolean flies(String fullId) {
+        return java.util.Set.of("bee", "wither", "ghast", "happy_ghast", "phantom", "bat", "allay", "vex", "blaze", "parrot")
+            .contains(fullId == null ? "" : fullId.replace("minecraft:", ""));
+    }
+
     /** Natural traits you always have as this mob (no button needed). Called every second. */
     public static void traits(ServerPlayer p, String fullId) {
         String id = fullId.replace("minecraft:", "");
