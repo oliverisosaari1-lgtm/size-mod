@@ -50,6 +50,20 @@ public class MorphMod implements ModInitializer {
     private static SaveData DATA = new SaveData();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<UUID, Entity> disguises = new HashMap<>();
+    private static final Map<UUID, Long> cooldown = new HashMap<>();
+    private static final Identifier HEALTH = Identifier.fromNamespaceAndPath("morph", "health");
+
+    /** Your max health becomes the mob's max health. */
+    private static void setHealth(ServerPlayer p, Entity disguise) {
+        var attr = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
+        if (attr == null) return;
+        if (disguise instanceof LivingEntity le) {
+            double want = Math.max(2, le.getMaxHealth());
+            attr.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(HEALTH, want - 20,
+                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+        } else attr.removeModifier(HEALTH);
+        if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
+    }
 
     private static Path file() { return server.getWorldPath(LevelResource.ROOT).resolve("morphs.json"); }
     private static void save() { try { Files.writeString(file(), GSON.toJson(DATA)); } catch (Exception ignored) { } }
@@ -72,6 +86,9 @@ public class MorphMod implements ModInitializer {
 
     public static void unmorph(ServerPlayer p, boolean message) {
         removeDisguise(p);
+        var attr = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
+        if (attr != null) attr.removeModifier(HEALTH);
+        if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
         if (DATA.current.remove(p.getUUID().toString()) != null) save();
         p.removeEffect(MobEffects.INVISIBILITY);
         if (message) p.sendSystemMessage(Component.literal("You're normal again.").withStyle(ChatFormatting.GRAY));
@@ -121,6 +138,9 @@ public class MorphMod implements ModInitializer {
                 e = spawnDisguise(p, id);
                 if (e == null) continue;
                 disguises.put(p.getUUID(), e);
+                boolean full = p.getHealth() >= p.getMaxHealth();
+                setHealth(p, e);
+                if (full) p.setHealth(p.getMaxHealth());
             }
             // Follow the player
             e.setPos(p.getX(), p.getY(), p.getZ());
@@ -130,6 +150,7 @@ public class MorphMod implements ModInitializer {
             e.setDeltaMovement(p.getDeltaMovement());
             e.setShiftKeyDown(p.isShiftKeyDown());
             if (s.getTickCount() % 20 == 0) {
+                setHealth(p, e);
                 p.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, false));
                 // Hide your armor and held items from others, so only the mob is seen
                 List<Pair<EquipmentSlot, ItemStack>> empty = new ArrayList<>();
@@ -173,6 +194,16 @@ public class MorphMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(MorphMod::tick);
 
         PayloadTypeRegistry.playC2S().register(OpenPayload.TYPE, OpenPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(PowerPayload.TYPE, PowerPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(PowerPayload.TYPE, (payload, ctx) -> {
+            ServerPlayer p = ctx.player();
+            String id = current(p);
+            if (id == null) { p.sendSystemMessage(Component.literal("Morph into a mob first (Right Shift)!").withStyle(ChatFormatting.RED)); return; }
+            long now = server.getTickCount();
+            Long ready = cooldown.get(p.getUUID());
+            if (ready != null && now < ready) return;
+            cooldown.put(p.getUUID(), now + Powers.use(p, id));
+        });
         ServerPlayNetworking.registerGlobalReceiver(OpenPayload.TYPE, (payload, ctx) -> MorphMenu.open(ctx.player()));
 
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {
