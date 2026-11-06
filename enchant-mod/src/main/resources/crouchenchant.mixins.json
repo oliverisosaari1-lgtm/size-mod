@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.iikka.crouchenchant.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["WearAnythingMixin", "ToolAnythingMixin", "MaceAnythingMixin"],
+  "injectors": { "defaultRequire": 1 }
+}
