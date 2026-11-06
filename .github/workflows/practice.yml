@@ -38,7 +38,9 @@ jobs:
           API=$(grep '^fabric_version=' gradle.properties | cut -d= -f2)
           LOADER=$(grep '^loader_version=' gradle.properties | cut -d= -f2)
           INSTALLER=$(curl -sSf https://meta.fabricmc.net/v2/versions/installer | jq -r '[.[]|select(.stable)][0].version')
-          mkdir -p /tmp/st/mods && cp "$JAR" /tmp/st/mods/
+          mkdir -p /tmp/st/mods /tmp/tj && cp "$JAR" /tmp/st/mods/test.jar
+          # test copy without the client-only Sodium/Essential requirement (a plain server can't load those)
+          (cd /tmp/tj && unzip -p /tmp/st/mods/test.jar fabric.mod.json | jq 'del(.depends.sodium, .depends["essential-container"])' > fabric.mod.json && zip -q /tmp/st/mods/test.jar fabric.mod.json)
           curl -sSfL -o "/tmp/st/mods/fabric-api.jar" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/fabric-api-$API.jar"
           curl -sSfL -o /tmp/st/server.jar "https://meta.fabricmc.net/v2/versions/loader/1.21.11/$LOADER/$INSTALLER/server/jar"
           cd /tmp/st && echo eula=true > eula.txt && printf 'online-mode=false\nlevel-type=minecraft\\:flat\ngenerate-structures=false\nspawn-protection=0\ndifficulty=normal\n' > server.properties
@@ -53,10 +55,12 @@ jobs:
       - name: Test that the practice world starts with the mod
         run: |
           JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
-          rm -rf /tmp/st2 && mkdir -p /tmp/st2/mods && cp "$JAR" /tmp/st/mods/fabric-api.jar /tmp/st2/mods/ && cp /tmp/st/server.jar /tmp/st/eula.txt /tmp/st/server.properties /tmp/st2/
+          rm -rf /tmp/st2 && mkdir -p /tmp/st2/mods && cp "$JAR" /tmp/st2/mods/test.jar && cp /tmp/st/mods/fabric-api.jar /tmp/st2/mods/ && cp /tmp/st/server.jar /tmp/st/eula.txt /tmp/st/server.properties /tmp/st2/
+          (cd /tmp/tj && unzip -p /tmp/st2/mods/test.jar fabric.mod.json | jq 'del(.depends.sodium, .depends["essential-container"])' > fabric.mod.json && zip -q /tmp/st2/mods/test.jar fabric.mod.json)
           mkdir -p /tmp/st2/world && (cd /tmp/st2/world && unzip -q "$GITHUB_WORKSPACE/practice-mod/src/main/resources/assets/olkkuspractice/practice_world.zip")
           cd /tmp/st2 && { for i in $(seq 1 150); do grep -q 'Done (' logs/latest.log 2>/dev/null && break; sleep 2; done; echo stop; sleep 15; } | timeout 400 java -Xmx2G -jar server.jar nogui > out.txt 2>&1 || true
           tail -20 out.txt
+          grep -i "exception\|error" out.txt | head -20 || true
           grep -q 'Done (' out.txt || { echo "SERVER DID NOT START"; exit 1; }
       - name: Get Sodium and Essential
         run: |
