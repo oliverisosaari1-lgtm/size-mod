@@ -191,7 +191,7 @@ public class Powers {
             case "wolf", "fox", "cat", "ocelot", "cheetah", "panda", "polar_bear", "armadillo" -> {
                 push(p, look.scale(1.8).add(0, 0.4, 0));
                 effect(p, MobEffects.SPEED, 100, 2);
-                sound(p, SoundEvents.WOLF_GROWL, 1f);
+                sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 1f);
                 return 30;
             }
             case "dolphin", "axolotl", "turtle", "cod", "salmon", "tropical_fish", "tadpole", "guardian", "elder_guardian", "nautilus" -> {

@@ -193,6 +193,17 @@ public class MorphMod implements ModInitializer {
 
         ServerTickEvents.END_SERVER_TICK.register(MorphMod::tick);
 
+        // Iron golem punches: much stronger, and throw them a little up in the air
+        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, target, hit) -> {
+            if (!(player instanceof ServerPlayer p) || !(target instanceof LivingEntity le) || !"minecraft:iron_golem".equals(current(p))) return net.minecraft.world.InteractionResult.PASS;
+            if (p.getAttackStrengthScale(0.5f) < 0.9f) return net.minecraft.world.InteractionResult.PASS; // normal hit while charging
+            le.hurtServer((ServerLevel) world, p.damageSources().playerAttack(p), 15);
+            Vec3Holder.launch(le, p);
+            p.resetAttackStrengthTicker();
+            world.playSound(null, le.getX(), le.getY(), le.getZ(), net.minecraft.sounds.SoundEvents.IRON_GOLEM_ATTACK, net.minecraft.sounds.SoundSource.PLAYERS, 1f, 1f);
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        });
+
         PayloadTypeRegistry.playC2S().register(OpenPayload.TYPE, OpenPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(PowerPayload.TYPE, PowerPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(PowerPayload.TYPE, (payload, ctx) -> {
@@ -210,5 +221,14 @@ public class MorphMod implements ModInitializer {
             d.register(Commands.literal("morph").executes(ctx -> { MorphMenu.open(ctx.getSource().getPlayerOrException()); return 1; }));
             d.register(Commands.literal("unmorph").executes(ctx -> { unmorph(ctx.getSource().getPlayerOrException(), true); return 1; }));
         });
+    }
+
+    /** Small helper so the golem launch is in one place. */
+    static class Vec3Holder {
+        static void launch(LivingEntity le, ServerPlayer p) {
+            var away = le.position().subtract(p.position()).normalize().scale(0.4);
+            le.setDeltaMovement(away.x, 0.75, away.z); // a little up, not far
+            le.hurtMarked = true;
+        }
     }
 }
