@@ -210,6 +210,8 @@ public class MorphMod implements ModInitializer {
     public void onInitialize() {
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             server = s;
+            DATA = new SaveData(); // each world has its own morphs (don't carry over from the last world)
+            samples.clear(); cooldown.clear(); powerCredit.clear(); flyers.clear();
             try { if (Files.exists(file())) DATA = GSON.fromJson(Files.readString(file()), SaveData.class); } catch (Exception ignored) { }
             if (DATA == null) DATA = new SaveData();
         });
