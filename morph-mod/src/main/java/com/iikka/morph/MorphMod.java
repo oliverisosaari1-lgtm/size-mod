@@ -134,6 +134,7 @@ public class MorphMod implements ModInitializer {
         e.setCustomName(p.getName());
         e.setCustomNameVisible(true);
         if (e instanceof Mob m) { m.setNoAi(true); m.setPersistenceRequired(); }
+        disguises.put(p.getUUID(), e); // before adding, so the "remove old disguises" check doesn't delete it
         p.level().addFreshEntity(e);
         PlayerTeam t = team();
         server.getScoreboard().addPlayerToTeam(e.getScoreboardName(), t);
