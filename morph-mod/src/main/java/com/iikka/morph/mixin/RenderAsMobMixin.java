@@ -19,6 +19,10 @@ public abstract class RenderAsMobMixin {
         if (!(entity instanceof Player player)) return;
         LivingEntity mob = MorphClient.bodyFor(player);
         if (mob == null) return;
-        cir.setReturnValue(((EntityRenderDispatcher) (Object) this).extractEntity(mob, partialTick));
+        try {
+            cir.setReturnValue(((EntityRenderDispatcher) (Object) this).extractEntity(mob, partialTick));
+        } catch (Throwable t) {
+            // if a mob can't be drawn, show the normal player instead of crashing
+        }
     }
 }

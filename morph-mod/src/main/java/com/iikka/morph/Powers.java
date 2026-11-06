@@ -88,7 +88,7 @@ public class Powers {
 
     /** Mobs that fly in vanilla: you can fly like in creative (double-tap space). */
     public static boolean flies(String fullId) {
-        return java.util.Set.of("bee", "wither", "ghast", "happy_ghast", "phantom", "bat", "allay", "vex", "blaze", "parrot")
+        return java.util.Set.of("ender_dragon", "bee", "wither", "ghast", "happy_ghast", "phantom", "bat", "allay", "vex", "blaze", "parrot")
             .contains(fullId == null ? "" : fullId.replace("minecraft:", ""));
     }
 
@@ -142,6 +142,7 @@ public class Powers {
             case "zombified_piglin" -> { near(p, 12, e -> { if (e instanceof net.minecraft.world.entity.Mob m && !(e instanceof net.minecraft.world.entity.player.Player)) { LivingEntity t = lookEntity(p, 30); if (t != null) m.setTarget(t); } }); sound(p, SoundEvents.ZOMBIFIED_PIGLIN_ANGRY, 1f); return 100; }
             case "wither" -> { for (int i = 0; i < 3; i++) shoot(p, "wither_skull", 1.5); sound(p, SoundEvents.WITHER_SHOOT, 1f); return 10; }
             case "blaze" -> { for (int i = 0; i < 3; i++) shoot(p, "small_fireball", 1.5); sound(p, SoundEvents.BLAZE_SHOOT, 1f); return 15; }
+            case "ender_dragon" -> { shoot(p, "dragon_fireball", 1.5); sound(p, SoundEvents.ENDER_DRAGON_SHOOT, 1f); return 20; }
             case "ghast" -> { shoot(p, "fireball", 1.5); sound(p, SoundEvents.GHAST_SHOOT, 1f); return 30; }
             case "snow_golem" -> { for (int i = 0; i < 5; i++) shoot(p, "snowball", 2.0); sound(p, SoundEvents.SNOW_GOLEM_SHOOT, 1f); return 5; }
             case "llama", "trader_llama" -> { shoot(p, "llama_spit", 2.0); sound(p, SoundEvents.LLAMA_SPIT, 1f); return 10; }

@@ -40,7 +40,7 @@ import java.util.*;
  */
 public class MorphMod implements ModInitializer {
     private static final String TAG = "morph_disguise";
-    private static final Set<String> BANNED = Set.of("minecraft:ender_dragon", "minecraft:giant");
+    private static final Set<String> BANNED = Set.of("minecraft:giant");
     private static MinecraftServer server;
 
     public static class SaveData {
@@ -112,6 +112,17 @@ public class MorphMod implements ModInitializer {
             && level.canSeeSky(net.minecraft.core.BlockPos.containing(p.getX(), p.getEyeY(), p.getZ()))
             && p.getItemBySlot(EquipmentSlot.HEAD).isEmpty())
             p.igniteForSeconds(8);
+    }
+
+    private static void unlock(ServerPlayer p, LivingEntity entity) {
+        String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
+        if (BANNED.contains(id)) return;
+        List<String> list = DATA.unlocked.computeIfAbsent(p.getUUID().toString(), k -> new ArrayList<>());
+        if (list.contains(id)) return;
+        list.add(id);
+        save();
+        p.sendSystemMessage(Component.literal("Unlocked morph: ").append(entity.getType().getDescription())
+            .append("! Press Right Shift (or /morph) to turn into it.").withStyle(ChatFormatting.LIGHT_PURPLE));
     }
 
     private static Path file() { return server.getWorldPath(LevelResource.ROOT).resolve("morphs.json"); }
@@ -219,15 +230,13 @@ public class MorphMod implements ModInitializer {
             if (p == null && entity.getKillCredit() instanceof ServerPlayer sp) p = sp;
             Object[] c = powerCredit.remove(entity.getUUID());
             if (p == null && c != null && server.getTickCount() < (long) c[1]) p = server.getPlayerList().getPlayer((UUID) c[0]);
-            if (p == null) return;
             String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
-            if (BANNED.contains(id)) return;
-            List<String> list = DATA.unlocked.computeIfAbsent(p.getUUID().toString(), k -> new ArrayList<>());
-            if (list.contains(id)) return;
-            list.add(id);
-            save();
-            p.sendSystemMessage(Component.literal("Unlocked morph: ").append(entity.getType().getDescription())
-                .append("! Press Right Shift (or /morph) to turn into it.").withStyle(ChatFormatting.LIGHT_PURPLE));
+            if (id.equals("minecraft:ender_dragon")) { // everyone who fought the dragon gets it
+                for (ServerPlayer near : ((ServerLevel) entity.level()).players()) if (near.distanceTo(entity) < 300) unlock(near, entity);
+                return;
+            }
+            if (p == null) return;
+            unlock(p, entity);
         });
 
         ServerTickEvents.END_SERVER_TICK.register(MorphMod::tick);
