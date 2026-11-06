@@ -77,9 +77,7 @@ public class Powers {
         Vec3 at = p.getEyePosition().add(look.scale(1.5));
         e.setPos(at.x, at.y, at.z);
         e.setDeltaMovement(look.scale(speed));
-        if (e instanceof net.minecraft.world.entity.TraceableEntity) {
-            try { e.getClass().getMethod("setOwner", Entity.class).invoke(e, p); } catch (Exception ignored) { }
-        }
+        if (e instanceof net.minecraft.world.entity.projectile.Projectile pr) pr.setOwner(p); // kills count as yours
         p.level().addFreshEntity(e);
     }
 
@@ -147,10 +145,6 @@ public class Powers {
             case "cave_spider" -> { push(p, look.scale(1.4).add(0, 0.5, 0)); LivingEntity t = lookEntity(p, 6); if (t != null) effect(t, MobEffects.POISON, 120, 1); sound(p, SoundEvents.SPIDER_STEP, 1.5f); return 20; }
             case "husk" -> { near(p, 5, e -> effect(e, MobEffects.HUNGER, 200, 2)); sound(p, SoundEvents.HUSK_AMBIENT, 1f); return 60; }
             case "drowned" -> { shoot(p, "trident", 2.5); sound(p, SoundEvents.DROWNED_SHOOT, 1f); return 20; }
-            case "iron_golem" -> {
-                near(p, 5, e -> { e.hurtServer(level, p.damageSources().playerAttack(p), 12); e.setDeltaMovement(e.getDeltaMovement().add(0, 0.8, 0)); e.hurtMarked = true; });
-                particles(p, ParticleTypes.EXPLOSION, p.position(), 10, 2, 0); sound(p, SoundEvents.IRON_GOLEM_ATTACK, 0.8f); return 40;
-            }
             case "ravager" -> { push(p, look.scale(2.2).add(0, 0.2, 0)); near(p, 3, e -> { e.hurtServer(level, p.damageSources().playerAttack(p), 10); e.setDeltaMovement(look.scale(2).add(0, 0.5, 0)); e.hurtMarked = true; }); sound(p, SoundEvents.RAVAGER_ROAR, 1f); return 40; }
             case "hoglin", "zoglin" -> { near(p, 4, e -> { e.setDeltaMovement(e.getDeltaMovement().add(0, 1.4, 0)); e.hurtMarked = true; e.hurtServer(level, p.damageSources().playerAttack(p), 6); }); sound(p, SoundEvents.HOGLIN_ATTACK, 1f); return 30; }
             case "warden" -> {

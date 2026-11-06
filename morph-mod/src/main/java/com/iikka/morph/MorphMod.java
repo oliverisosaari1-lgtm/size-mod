@@ -51,6 +51,8 @@ public class MorphMod implements ModInitializer {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<UUID, Entity> samples = new HashMap<>(); // a mob (not in the world) used to read size and health
     private static final Map<UUID, Long> cooldown = new HashMap<>();
+    /** Mobs near you when you used a power: if they die soon after, the kill counts as yours. */
+    private static final Map<UUID, Object[]> powerCredit = new HashMap<>();
     private static final Identifier HEALTH = Identifier.fromNamespaceAndPath("morph", "health");
     private static final Identifier SIZE = Identifier.fromNamespaceAndPath("morph", "size");
 
@@ -174,7 +176,11 @@ public class MorphMod implements ModInitializer {
         // Killing a mob unlocks it
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             if (entity instanceof Player || entity.getTags().contains(TAG)) return;
-            if (!(source.getEntity() instanceof ServerPlayer p)) return;
+            ServerPlayer p = source.getEntity() instanceof ServerPlayer sp ? sp : null;
+            if (p == null && entity.getKillCredit() instanceof ServerPlayer sp) p = sp;
+            Object[] c = powerCredit.remove(entity.getUUID());
+            if (p == null && c != null && server.getTickCount() < (long) c[1]) p = server.getPlayerList().getPlayer((UUID) c[0]);
+            if (p == null) return;
             String id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
             if (BANNED.contains(id)) return;
             List<String> list = DATA.unlocked.computeIfAbsent(p.getUUID().toString(), k -> new ArrayList<>());
@@ -209,6 +215,9 @@ public class MorphMod implements ModInitializer {
             Long ready = cooldown.get(p.getUUID());
             if (ready != null && now < ready) return;
             cooldown.put(p.getUUID(), now + Powers.use(p, id));
+            powerCredit.values().removeIf(c -> now > (long) c[1]);
+            for (Entity e : p.level().getEntities(p, p.getBoundingBox().inflate(40)))
+                if (e instanceof LivingEntity && !(e instanceof Player)) powerCredit.put(e.getUUID(), new Object[]{p.getUUID(), now + 200});
         });
         ServerPlayNetworking.registerGlobalReceiver(OpenPayload.TYPE, (payload, ctx) -> MorphMenu.open(ctx.player()));
 
