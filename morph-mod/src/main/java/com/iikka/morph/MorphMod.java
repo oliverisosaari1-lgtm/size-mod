@@ -149,8 +149,10 @@ public class MorphMod implements ModInitializer {
             if (e instanceof LivingEntity le) { le.setYHeadRot(p.getYHeadRot()); le.setYBodyRot(p.yBodyRot); }
             e.setDeltaMovement(p.getDeltaMovement());
             e.setShiftKeyDown(p.isShiftKeyDown());
+            if (Powers.noFallDamage(id)) p.fallDistance = 0;
             if (s.getTickCount() % 20 == 0) {
                 setHealth(p, e);
+                Powers.traits(p, id);
                 p.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, false));
                 // Hide your armor and held items from others, so only the mob is seen
                 List<Pair<EquipmentSlot, ItemStack>> empty = new ArrayList<>();

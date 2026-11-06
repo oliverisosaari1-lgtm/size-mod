@@ -88,6 +88,27 @@ public class Powers {
         p.hurtMarked = true;
     }
 
+    /** Natural traits you always have as this mob (no button needed). Called every second. */
+    public static void traits(ServerPlayer p, String fullId) {
+        String id = fullId.replace("minecraft:", "");
+        switch (id) {
+            case "chicken", "parrot", "bat", "phantom", "allay", "vex", "happy_ghast" -> effect(p, MobEffects.SLOW_FALLING, 40, 0);
+            case "cod", "salmon", "tropical_fish", "tadpole", "pufferfish", "squid", "glow_squid", "dolphin", "axolotl", "turtle",
+                 "drowned", "guardian", "elder_guardian", "nautilus" -> { effect(p, MobEffects.WATER_BREATHING, 40, 0); if (p.isInWater()) effect(p, MobEffects.DOLPHINS_GRACE, 40, 0); }
+            case "blaze", "strider", "magma_cube", "ghast", "wither_skeleton", "zombified_piglin", "piglin", "piglin_brute", "hoglin", "zoglin" -> effect(p, MobEffects.FIRE_RESISTANCE, 40, 0);
+            case "rabbit", "goat", "frog", "horse", "camel" -> effect(p, MobEffects.JUMP_BOOST, 40, 1);
+            case "iron_golem", "ravager", "warden" -> effect(p, MobEffects.RESISTANCE, 40, 0);
+            case "wolf", "fox", "ocelot", "cheetah" -> effect(p, MobEffects.SPEED, 40, 0);
+            default -> { }
+        }
+    }
+
+    /** No fall damage as these mobs. */
+    public static boolean noFallDamage(String fullId) {
+        String id = fullId.replace("minecraft:", "");
+        return java.util.Set.of("chicken", "parrot", "bat", "phantom", "allay", "vex", "cat", "ocelot", "happy_ghast", "ghast", "blaze", "breeze", "slime", "magma_cube", "iron_golem").contains(id);
+    }
+
     public static int use(ServerPlayer p, String fullId) {
         String id = fullId.replace("minecraft:", "");
         ServerLevel level = (ServerLevel) p.level();
@@ -130,7 +151,6 @@ public class Powers {
                 sound(p, SoundEvents.SPIDER_AMBIENT, 1f); return 20;
             }
             case "cave_spider" -> { push(p, look.scale(1.4).add(0, 0.5, 0)); LivingEntity t = lookEntity(p, 6); if (t != null) effect(t, MobEffects.POISON, 120, 1); sound(p, SoundEvents.SPIDER_STEP, 1.5f); return 20; }
-            case "zombie" -> { effect(p, MobEffects.STRENGTH, 200, 1); sound(p, SoundEvents.ZOMBIE_AMBIENT, 0.8f); return 100; }
             case "husk" -> { near(p, 5, e -> effect(e, MobEffects.HUNGER, 200, 2)); sound(p, SoundEvents.HUSK_AMBIENT, 1f); return 60; }
             case "drowned" -> { shoot(p, "trident", 2.5); sound(p, SoundEvents.DROWNED_SHOOT, 1f); return 20; }
             case "zombie_villager" -> { p.heal(6); effect(p, MobEffects.ABSORPTION, 600, 1); sound(p, SoundEvents.ZOMBIE_VILLAGER_CURE, 1f); return 200; }
