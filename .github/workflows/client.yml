@@ -1,0 +1,29 @@
+name: Build Olkkus Client mod
+on:
+  push:
+    paths: ['client-mod/**', '.github/workflows/client.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client-mod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.2.0"
+      - run: gradle build --stacktrace
+      - name: Inspect client classes
+        run: |
+          CL=$(find ~/.gradle/caches .gradle -path '*1.21.11*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' | head -1)
+          for c in net.minecraft.world.entity.player.PlayerSkin net.minecraft.client.resources.PlayerSkin net.minecraft.core.ClientAsset 'net.minecraft.core.ClientAsset$Texture' 'net.minecraft.core.ClientAsset$ResourceTexture' net.minecraft.client.player.AbstractClientPlayer net.minecraft.client.KeyMapping net.minecraft.client.input.MouseButtonEvent net.minecraft.client.renderer.entity.state.AvatarRenderState net.minecraft.client.renderer.entity.layers.CapeLayer net.minecraft.client.renderer.entity.layers.WingsLayer; do echo "== $c"; javap -p -cp "$CL" "$c" 2>&1 | head -40; done
+          javap -p -cp "$CL" net.minecraft.client.gui.screens.Screen | grep -i mouse
+          javap -p -cp "$CL" net.minecraft.client.gui.components.events.GuiEventListener | grep -i mouse

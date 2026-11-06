@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "olkkusclient",
+  "version": "${version}",
+  "name": "Olkku's Client",
+  "environment": "client",
+  "entrypoints": { "client": ["com.iikka.olkkuclient.OlkkuClient"] },
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "fabric-api": "*" }
+}
