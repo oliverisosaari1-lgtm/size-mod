@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "morph",
+  "version": "${version}",
+  "name": "Morph Mod",
+  "description": "Kill a mob to unlock it, then turn into it. Right Shift opens the morph menu.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.iikka.morph.MorphMod"], "client": ["com.iikka.morph.MorphClient"] },
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "java": ">=21", "fabric-api": "*" }
+}
