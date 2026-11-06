@@ -52,6 +52,17 @@ public class MorphMod implements ModInitializer {
     private static final Map<UUID, Entity> disguises = new HashMap<>();
     private static final Map<UUID, Long> cooldown = new HashMap<>();
     private static final Identifier HEALTH = Identifier.fromNamespaceAndPath("morph", "health");
+    private static final Identifier SIZE = Identifier.fromNamespaceAndPath("morph", "size");
+
+    /** You become the mob's size, so a silverfish fits under a bed. */
+    private static void setSize(ServerPlayer p, Entity disguise) {
+        var attr = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
+        if (attr == null) return;
+        if (disguise == null) { attr.removeModifier(SIZE); return; }
+        double scale = Math.max(0.0625, Math.min(16, disguise.getBbHeight() / 1.8));
+        attr.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(SIZE, scale - 1,
+            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+    }
 
     /** Your max health becomes the mob's max health. */
     private static void setHealth(ServerPlayer p, Entity disguise) {
@@ -88,6 +99,7 @@ public class MorphMod implements ModInitializer {
         removeDisguise(p);
         var attr = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
         if (attr != null) attr.removeModifier(HEALTH);
+        setSize(p, null);
         if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
         if (DATA.current.remove(p.getUUID().toString()) != null) save();
         p.removeEffect(MobEffects.INVISIBILITY);
@@ -141,6 +153,7 @@ public class MorphMod implements ModInitializer {
                 disguises.put(p.getUUID(), e);
                 boolean full = p.getHealth() >= p.getMaxHealth();
                 setHealth(p, e);
+                setSize(p, e);
                 if (full) p.setHealth(p.getMaxHealth());
             }
             // Follow the player
@@ -159,6 +172,7 @@ public class MorphMod implements ModInitializer {
             }
             if (s.getTickCount() % 20 == 0) {
                 setHealth(p, e);
+                setSize(p, e);
                 Powers.traits(p, id);
                 p.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, false));
                 // Hide your armor and held items from others, so only the mob is seen

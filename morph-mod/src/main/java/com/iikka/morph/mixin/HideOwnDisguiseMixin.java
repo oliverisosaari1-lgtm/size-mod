@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(EntityRenderDispatcher.class)
 public abstract class HideOwnDisguiseMixin {
     @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
-    private void morph$hideOwn(Entity entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> cir) {
+    private void morph$hideOwn(Entity entity, Frustum frustum, double x, double y, double z, float partialTick, CallbackInfoReturnable<Boolean> cir) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || entity == mc.player || !entity.hasCustomName()) return;
         if (!mc.options.getCameraType().isFirstPerson()) return;
