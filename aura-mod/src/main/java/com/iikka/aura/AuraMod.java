@@ -132,11 +132,26 @@ public class AuraMod implements ModInitializer {
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(RingPayload.TYPE, (payload, ctx) -> Rings.shoot(ctx.player()));
         ServerTickEvents.END_SERVER_TICK.register(Rings::tick);
         ServerTickEvents.END_SERVER_TICK.register(Wave::tick);
+        ServerTickEvents.END_SERVER_TICK.register(Powers::tick);
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {
             d.register(Commands.literal("wave").executes(ctx -> {
                 ServerPlayer p = ctx.getSource().getPlayerOrException();
                 boolean on = Wave.toggle(p);
                 msg(p, on ? "Wave on! A sea of diamond blocks ripples under you." : "Wave off.", on);
+                return 1;
+            }));
+            d.register(Commands.literal("blackhole").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                Powers.blackhole(p); msg(p, "Black hole! It sucks everything in for 15 seconds.", true); return 1;
+            }));
+            d.register(Commands.literal("meteor").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                Powers.meteor(p); msg(p, "Meteors incoming for 10 seconds!", true); return 1;
+            }));
+            d.register(Commands.literal("dragonride").executes(ctx -> {
+                ServerPlayer p = ctx.getSource().getPlayerOrException();
+                String r = Powers.dragonride(p);
+                if (r == null) msg(p, "Look at a mob close to you first, then type /dragonride.", false); else msg(p, r, true);
                 return 1;
             }));
             d.register(Commands.literal("ring").executes(ctx -> { Rings.openMenu(ctx.getSource().getPlayerOrException()); return 1; }));
@@ -158,10 +173,11 @@ public class AuraMod implements ModInitializer {
         });
         ServerTickEvents.END_SERVER_TICK.register(AuraMod::tick);
         ServerPlayConnectionEvents.DISCONNECT.register((h, s) -> { removeAura(h.player.getUUID()); Wave.remove(h.player.getUUID()); superTouch.remove(h.player.getUUID()); });
-        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { Rings.clear(); Wave.clear(); for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
+        ServerLifecycleEvents.SERVER_STOPPING.register(s -> { Rings.clear(); Wave.clear(); Powers.clear(); for (UUID id : new ArrayList<>(auras.keySet())) removeAura(id); });
         // Leftover glass from a crash is cleaned up
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
             if (e.getTags().contains(Rings.TAG) && e.tickCount > 100) e.discard();
+            if (e.getTags().contains(Powers.TAG) && e.tickCount > 400) e.discard();
             if (e.getTags().contains(Wave.TAG) && !Wave.ours(e)) e.discard();
             if (e.getTags().contains(TAG) && auras.values().stream().noneMatch(a -> a.glass.contains(e))) e.discard();
         });
