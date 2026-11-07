@@ -14,6 +14,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -142,8 +143,8 @@ public final class Weapons {
         ChatFormatting G = ChatFormatting.GREEN, R0 = ChatFormatting.RED, Y = ChatFormatting.YELLOW, A = ChatFormatting.AQUA,
             P = ChatFormatting.LIGHT_PURPLE, O = ChatFormatting.GOLD, W = ChatFormatting.WHITE, B = ChatFormatting.BLUE;
 
-        use("Fart Gun", G, Items.BROWN_DYE, "Pffffrrrt! Stinky cloud in front of you", 15, (p, l) -> fart(p, l, 7, 120, 1.2));
-        use("Mega Fart Jetpack", G, Items.BROWN_DYE, "Fart yourself into the sky", 30, (p, l) -> {
+        use("Fart Gun", G, Items.DYE.get(DyeColor.BROWN), "Pffffrrrt! Stinky cloud in front of you", 15, (p, l) -> fart(p, l, 7, 120, 1.2));
+        use("Mega Fart Jetpack", G, Items.DYE.get(DyeColor.BROWN), "Fart yourself into the sky", 30, (p, l) -> {
             fart(p, l, 4, 80, 0.6);
             for (LivingEntity e : around(l, p.position(), 4, p)) eff(e, MobEffects.NAUSEA, 120, 0);
             setVel(p, new Vec3(p.getLookAngle().x * 0.8, 1.6, p.getLookAngle().z * 0.8));
@@ -161,12 +162,12 @@ public final class Weapons {
             Vec3 look = p.getLookAngle();
             for (int i = 0; i < 6; i++) throwThing(p, EntityTypes.MINECART, muzzle(p).subtract(look.scale(i * 1.3)), look.scale(1.8), Impact.KNOCK, 1.6f, true, ParticleTypes.LARGE_SMOKE);
         });
-        melee("Punch Gloves", R0, Items.RED_DYE, "Hit someone: they fly away", (p, l, t) -> {
+        melee("Punch Gloves", R0, Items.DYE.get(DyeColor.RED), "Hit someone: they fly away", (p, l, t) -> {
             sound(l, t.position(), "entity.player.attack.strong", 1.5f, 0.7f);
             parts(l, ParticleTypes.CRIT, t.position().add(0, 1, 0), 20, 0.4, 0.3);
             knock(t, p.position(), 3.0, 0.8);
         });
-        use("Rocket Fist", R0, Items.RED_DYE, "Dash forward and punch everything you hit", 30, (p, l) -> {
+        use("Rocket Fist", R0, Items.DYE.get(DyeColor.RED), "Dash forward and punch everything you hit", 30, (p, l) -> {
             Vec3 look = p.getLookAngle();
             setVel(p, new Vec3(look.x * 2.2, 0.3, look.z * 2.2));
             sound(l, p.position(), "entity.player.attack.sweep", 1.5f, 0.6f);
@@ -193,7 +194,7 @@ public final class Weapons {
             knock(t, p.position(), 2.0, 0.5);
             eff(t, MobEffects.SLOWNESS, 40, 1);
         });
-        melee("Pillow", W, Items.WHITE_WOOL, "Pillow fight! No damage, huge fluff", (p, l, t) -> {
+        melee("Pillow", W, Items.WOOL.get(DyeColor.WHITE), "Pillow fight! No damage, huge fluff", (p, l, t) -> {
             sound(l, t.position(), "block.wool.break", 2, 0.8f);
             parts(l, ParticleTypes.CLOUD, t.position().add(0, 1, 0), 30, 0.5, 0.1);
             knock(t, p.position(), 2.6, 0.7);
@@ -209,7 +210,7 @@ public final class Weapons {
             eff(t, MobEffects.SLOWNESS, 80, 3);
             eff(t, MobEffects.WEAKNESS, 80, 1);
         });
-        melee("Banana", Y, Items.YELLOW_DYE, "Slip! They spin and fall over", (p, l, t) -> {
+        melee("Banana", Y, Items.DYE.get(DyeColor.YELLOW), "Slip! They spin and fall over", (p, l, t) -> {
             sound(l, t.position(), "block.honey_block.slide", 2, 1.5f);
             t.setYRot(t.getYRot() + 180);
             setVel(t, new Vec3((R.nextDouble() - 0.5) * 2, 0.6, (R.nextDouble() - 0.5) * 2));
@@ -360,7 +361,7 @@ public final class Weapons {
         });
         use("Clown Horn", R0, Items.GOAT_HORN, "HONK. Everyone near gets dizzy", 30, (p, l) -> Impact.HONK.apply(l, p, p.position(), 1.5f));
         use("Cake Cannon", P, Items.CAKE, "Happy birthday! Party explosion", 15, (p, l) -> throwThing(p, EntityTypes.SNOWBALL, muzzle(p), p.getLookAngle().scale(1.5), Impact.PARTY, 1.5f, false, ParticleTypes.FIREWORK));
-        use("Confetti Cannon", P, Items.PINK_DYE, "A blast of confetti in their face", 10, (p, l) -> {
+        use("Confetti Cannon", P, Items.DYE.get(DyeColor.PINK), "A blast of confetti in their face", 10, (p, l) -> {
             parts(l, ParticleTypes.FIREWORK, muzzle(p), 60, 0.4, 0.3);
             sound(l, p.position(), "entity.firework_rocket.blast", 1.5f, 1.5f);
             cone(p, 6, 0.6, e -> { hurt(e, p, 2); knock(e, p.position(), 1.2, 0.4); });
@@ -435,7 +436,7 @@ public final class Weapons {
             eff(p, MobEffects.SLOW_FALLING, 200, 0);
             sound(l, p.position(), "entity.rabbit.jump", 2, 0.6f);
         });
-        use("Hulk Smash", G, Items.GREEN_DYE, "Super strong and tanky for 10 seconds", 80, (p, l) -> {
+        use("Hulk Smash", G, Items.DYE.get(DyeColor.GREEN), "Super strong and tanky for 10 seconds", 80, (p, l) -> {
             eff(p, MobEffects.STRENGTH, 200, 2);
             eff(p, MobEffects.RESISTANCE, 200, 1);
             sound(l, p.position(), "entity.ravager.roar", 2, 1);
@@ -450,7 +451,7 @@ public final class Weapons {
             if (b == null) return;
             SillyMod.later(12, () -> { if (b.isAlive()) b.setDeltaMovement(p.getEyePosition().subtract(b.position()).normalize().scale(1.4)); });
         });
-        use("Banana Peel Mine", Y, Items.YELLOW_DYE, "Everyone near you slips around", 30, (p, l) -> {
+        use("Banana Peel Mine", Y, Items.DYE.get(DyeColor.YELLOW), "Everyone near you slips around", 30, (p, l) -> {
             for (LivingEntity e : around(l, p.position(), 6, p)) {
                 setVel(e, new Vec3((R.nextDouble() - 0.5) * 2, 0.5, (R.nextDouble() - 0.5) * 2));
                 eff(e, MobEffects.NAUSEA, 100, 0);
@@ -491,7 +492,7 @@ public final class Weapons {
             for (LivingEntity e : around(l, p.position(), 10, p)) { eff(e, MobEffects.SPEED, 100, 3); eff(e, MobEffects.NAUSEA, 100, 0); setVel(e, new Vec3((R.nextDouble() - 0.5) * 2.5, 0.2, (R.nextDouble() - 0.5) * 2.5)); }
             parts(l, ParticleTypes.SNOWFLAKE, p.position(), 80, 5, 0.02);
         });
-        use("Sheep Shield", W, Items.WHITE_WOOL, "A ring of sheep explodes out from you", 40, (p, l) -> {
+        use("Sheep Shield", W, Items.WOOL.get(DyeColor.WHITE), "A ring of sheep explodes out from you", 40, (p, l) -> {
             for (int i = 0; i < 8; i++) {
                 double a = Math.PI * 2 * i / 8;
                 throwThing(p, EntityTypes.SHEEP, p.position().add(Math.cos(a) * 1.5, 1, Math.sin(a) * 1.5), new Vec3(Math.cos(a) * 1.2, 0.4, Math.sin(a) * 1.2), Impact.BOUNCE, 0.8f, false, ParticleTypes.CLOUD);

@@ -27,7 +27,7 @@ jobs:
           echo "JAR $CL"
           javap -cp "$CL" net.minecraft.world.level.block.Blocks | grep -iE 'wool|concrete|chain|terracotta|stained|dye|color' | head -40
           javap -cp "$CL" net.minecraft.world.item.Items | grep -iE 'dye|wool|chain' | head -20
-          javap -cp "$CL" net.minecraft.world.entity.EntityTypes | grep -iE 'boat|cod|puffer' | head
+          javap -cp "$CL" net.minecraft.world.level.block.ColorCollection
       - name: Test in a real server (new world, all maps, every weapon)
         run: |
           JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
