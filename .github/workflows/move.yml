@@ -1,0 +1,61 @@
+name: Build Move mod
+on:
+  push:
+    paths: ['move-mod/**', '.github/workflows/move.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: move-mod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.2.0"
+      - run: gradle build --stacktrace
+      - name: Probe
+        run: |
+          CL=$(find ~/.gradle/caches .gradle -path '*1.21.11*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' | head -1)
+          for c in net.minecraft.client.renderer.entity.state.LivingEntityRenderState net.minecraft.client.renderer.entity.state.HumanoidRenderState net.minecraft.client.renderer.entity.state.EntityRenderState; do echo "== $c"; javap -p -cp "$CL" "$c" 2>&1 | head -70; done
+          javap -p -cp "$CL" net.minecraft.client.renderer.entity.LivingEntityRenderer | grep -i 'setupRotations\|extractRenderState\|submit'
+          javap -p -cp "$CL" net.minecraft.client.model.player.PlayerModel | grep -i 'setupAnim'
+          javap -p -cp "$CL" net.minecraft.client.model.HumanoidModel | grep -i 'ModelPart\|setupAnim'
+          javap -p -cp "$CL" net.minecraft.world.entity.Display | grep -i 'passenger\|ride'
+          javap -p -cp "$CL" net.minecraft.world.entity.Entity | grep -i 'startRiding\|canRide\|fallDistance\|positionRider\|canAddPassenger\|PassengerRidingPosition'
+          javap -p -cp "$CL" net.minecraft.client.player.LocalPlayer | grep -i 'input\|jump'
+          javap -p -cp "$CL" net.minecraft.client.player.ClientInput
+          javap -p -cp "$CL" net.minecraft.world.entity.player.Input
+      - name: Test that a server starts with the mod (mixins load)
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          API=$(grep '^fabric_version=' gradle.properties | cut -d= -f2)
+          LOADER=$(grep '^loader_version=' gradle.properties | cut -d= -f2)
+          INSTALLER=$(curl -sSf https://meta.fabricmc.net/v2/versions/installer | jq -r '[.[]|select(.stable)][0].version')
+          mkdir -p /tmp/st/mods && cp "$JAR" /tmp/st/mods/
+          curl -sSfL -o "/tmp/st/mods/fabric-api.jar" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/fabric-api-$API.jar"
+          curl -sSfL -o /tmp/st/server.jar "https://meta.fabricmc.net/v2/versions/loader/1.21.11/$LOADER/$INSTALLER/server/jar"
+          cd /tmp/st && echo eula=true > eula.txt && printf 'online-mode=false\nlevel-type=minecraft\\:flat\n' > server.properties
+          { for i in $(seq 1 150); do grep -q 'Done (' logs/latest.log 2>/dev/null && break; sleep 2; done; echo stop; sleep 15; } | timeout 400 java -Xmx2G -jar server.jar nogui > out.txt 2>&1 || true
+          tail -25 out.txt
+          grep -q 'Done (' out.txt || { echo "SERVER DID NOT START"; exit 1; }
+          ! grep -qi 'mixin.*\(error\|fail\)' out.txt || { echo "MIXIN PROBLEM"; exit 1; }
+      - name: Publish release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          API=$(grep '^fabric_version=' gradle.properties | cut -d= -f2)
+          mkdir -p out && cp "$JAR" out/
+          curl -sSfL -o "out/fabric-api-$API.jar" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/fabric-api-$API.jar"
+          (cd out && zip -q ../Sit-Move-Mod.zip *.jar)
+          gh release delete move -y --cleanup-tag || true
+          gh release create move "$JAR" Sit-Move-Mod.zip --title "Sit and Move Mod" --notes "Sit and Move Mod for Fabric 1.21.11 (needs Fabric API)"

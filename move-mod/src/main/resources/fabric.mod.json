@@ -1,0 +1,3 @@
+{ "schemaVersion": 1, "id": "olkkumove", "version": "${version}", "name": "Sit and Move",
+  "entrypoints": { "main": ["com.iikka.move.MoveMod"] },
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "fabric-api": "*" } }
