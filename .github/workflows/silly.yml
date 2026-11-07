@@ -55,6 +55,10 @@ jobs:
           mkdir -p out && cp "$JAR" out/
           curl -sSfL -o "out/fabric-api-$API.jar" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/fabric-api-$API.jar"
           (cd out && zip -q ../Silly-Weapon-Roulette-26.3.zip *.jar)
+      - name: Print zip
+        run: |
+          sha256sum Silly-Weapon-Roulette-26.3.zip
+          base64 -w 0 Silly-Weapon-Roulette-26.3.zip | fold -w 20000 | sed 's/^/B64:/'
       - uses: actions/upload-artifact@v4
         with:
           name: silly-roulette
