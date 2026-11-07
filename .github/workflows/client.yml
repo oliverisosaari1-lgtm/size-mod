@@ -16,14 +16,30 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "9.2.0"
+          gradle-version: current
       - run: gradle build --stacktrace
-      - name: Inspect client classes
+      - name: Probe
+        if: always()
         run: |
-          CL=$(find ~/.gradle/caches .gradle -path '*1.21.11*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' | head -1)
-          for c in net.minecraft.world.entity.player.PlayerSkin net.minecraft.client.resources.PlayerSkin net.minecraft.core.ClientAsset 'net.minecraft.core.ClientAsset$Texture' 'net.minecraft.core.ClientAsset$ResourceTexture' net.minecraft.client.player.AbstractClientPlayer net.minecraft.client.KeyMapping net.minecraft.client.input.MouseButtonEvent net.minecraft.client.renderer.entity.state.AvatarRenderState net.minecraft.client.renderer.entity.layers.CapeLayer net.minecraft.client.renderer.entity.layers.WingsLayer; do echo "== $c"; javap -p -cp "$CL" "$c" 2>&1 | head -40; done
-          javap -p -cp "$CL" net.minecraft.client.gui.screens.Screen | grep -i mouse
-          javap -p -cp "$CL" net.minecraft.client.gui.components.events.GuiEventListener | grep -i mouse
+          CL=$(find ~/.gradle/caches .gradle -path '*26.3*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' 2>/dev/null | head -1)
+          FA=$(find ~/.gradle/caches -name 'fabric-rendering-v1*.jar' | grep -v sources | head -1); echo "FA=$FA"
+          J="javap -p -cp $CL:$FA"
+          unzip -l "$FA" | grep -i hud
+          $J net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry; $J net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement; $J net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements | head -5
+          $J net.minecraft.client.gui.GuiGraphicsExtractor | grep -i 'fill\|item(\|outline\|blit\|pose\|text(' | head -30
+          $J net.minecraft.client.gui.screens.Screen | grep -i 'mouse\|key\|init\|charTyped'
+          $J net.minecraft.client.gui.components.events.GuiEventListener | grep -i 'mouse\|key'
+          $J net.minecraft.client.input.KeyEvent
+          $J net.minecraft.client.KeyMapping | grep -i 'click\|isDown\|KEY'
+          $J net.minecraft.client.player.AbstractClientPlayer | grep -i skin
+          $J net.minecraft.world.entity.player.PlayerSkin | head -12
+          $J 'net.minecraft.core.ClientAsset$ResourceTexture' | head -8
+          $J net.minecraft.client.renderer.GameRenderer | grep -i fov
+          $J net.minecraft.client.Minecraft | grep -i 'fps\|getConnection\|getDeltaTracker\|font'
+          $J net.minecraft.client.multiplayer.PlayerInfo | grep -i latency
+          $J net.minecraft.client.DeltaTracker | head
+          $J com.mojang.blaze3d.platform.InputConstants | grep -i 'RSHIFT\|RIGHT_SHIFT\|KEY_C\b'
+          $J net.minecraft.client.renderer.entity.layers.CapeLayer | grep submit

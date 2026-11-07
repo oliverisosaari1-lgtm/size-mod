@@ -5,5 +5,5 @@
   "name": "Olkku's Client",
   "environment": "client",
   "entrypoints": { "client": ["com.iikka.olkkuclient.OlkkuClient"] },
-  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.11", "fabric-api": "*" }
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~26.3", "fabric-api": "*" }
 }
