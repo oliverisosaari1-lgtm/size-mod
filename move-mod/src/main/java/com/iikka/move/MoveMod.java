@@ -27,6 +27,12 @@ import java.util.Map;
 import java.util.UUID;
 
 public class MoveMod implements ModInitializer {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("olkkumove");
+    private static int warnings;
+
+    /** Something went wrong: log it instead of crashing the game. */
+    public static void warn(Throwable t) { if (warnings++ < 20) LOG.error("Sit and Move error (game kept running)", t); }
+
     public static final String SEAT_TAG = "olkku_seat";
     public static final String LAY_NAME = "olkku_lay";
 
@@ -72,7 +78,11 @@ public class MoveMod implements ModInitializer {
         return 1;
     }
 
+    private static MinecraftServer theServer;
+
     private static void tick(MinecraftServer server) {
+        theServer = server;
+        try {
         // Value: ticks since the move, or -1000 once you have been in the air.
         noFall.entrySet().removeIf(en -> {
             ServerPlayer p = server.getPlayerList().getPlayer(en.getKey());
@@ -109,6 +119,7 @@ public class MoveMod implements ModInitializer {
                 seat.positionRider(rider);
             }
         }
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 
     private static void broadcast(ServerPlayer p, byte kind) {
@@ -117,6 +128,7 @@ public class MoveMod implements ModInitializer {
     }
 
     private static void onMove(ServerPlayer p, byte kind) {
+        try {
         if (p.isSpectator()) return;
         ServerLevel level = (ServerLevel) p.level();
         switch (kind) {
@@ -144,6 +156,7 @@ public class MoveMod implements ModInitializer {
                 if (Anim.isGesture(kind)) broadcast(p, kind);
             }
         }
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 
     @Override
@@ -151,11 +164,12 @@ public class MoveMod implements ModInitializer {
         PayloadTypeRegistry.playC2S().register(MovePayload.TYPE, MovePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(AnimPayload.TYPE, AnimPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(MovePayload.TYPE, (payload, ctx) -> {
-            ServerPlayer p = ctx.player();
-            if (payload.kind() == Anim.FLIP || payload.kind() == Anim.DASH) noFall.put(p.getUUID(), 0);
-            var srv = p.level().getServer();
-            if (srv != null && !srv.isSameThread()) srv.execute(() -> onMove(p, payload.kind()));
-            else onMove(p, payload.kind());
+            try {
+                ServerPlayer p = ctx.player();
+                if (payload.kind() == Anim.FLIP || payload.kind() == Anim.DASH) noFall.put(p.getUUID(), 0);
+                if (theServer != null && !theServer.isSameThread()) theServer.execute(() -> onMove(p, payload.kind()));
+                else onMove(p, payload.kind());
+            } catch (Throwable t) { warn(t); }
         });
 
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {

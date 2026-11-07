@@ -24,6 +24,7 @@ public class BodyMixin {
     @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
         at = @At("HEAD"))
     private void move$lay(LivingEntityRenderState state, PoseStack pose, SubmitNodeCollector c, CameraRenderState cam, CallbackInfo ci) {
+        try {
         if (!(state instanceof AvatarRenderState a)) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
@@ -34,11 +35,13 @@ public class BodyMixin {
         a.nameTag = null;
         a.bedOrientation = null;
         a.isPassenger = false;
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 
     @Inject(method = "setupRotations(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;FF)V",
         at = @At("TAIL"))
     private void move$spin(LivingEntityRenderState state, PoseStack pose, float bodyRot, float scale, CallbackInfo ci) {
+        try {
         if (!(state instanceof AvatarRenderState a)) return;
         float flip = Anim.progress(a.id, Anim.FLIP);
         if (flip >= 0) {
@@ -69,5 +72,6 @@ public class BodyMixin {
         }
         if ((sec = Anim.seconds(a.id, Anim.CHEER)) >= 0)
             pose.translate(0, Math.abs(Math.sin(sec * 10)) * 0.15f * Math.min(1, (2.4f - sec) * 4), 0);
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 }

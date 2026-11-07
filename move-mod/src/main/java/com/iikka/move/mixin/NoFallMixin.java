@@ -13,9 +13,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class NoFallMixin {
     @Inject(method = "causeFallDamage", at = @At("HEAD"), cancellable = true)
     private void move$noFall(CallbackInfoReturnable<Boolean> cir) {
+        try {
         if ((Object) this instanceof ServerPlayer p && MoveMod.isFallSafe(p)) {
             p.resetFallDistance();
             cir.setReturnValue(false);
         }
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 }

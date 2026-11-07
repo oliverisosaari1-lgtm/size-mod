@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class CrawlMixin {
     @Inject(method = "updatePlayerPose", at = @At("HEAD"), cancellable = true)
     private void move$crawl(CallbackInfo ci) {
+        try {
         Player self = (Player) (Object) this;
         boolean crawl = self instanceof ServerPlayer sp ? MoveMod.isCrawling(sp.getUUID())
             : self.level().isClientSide() && MoveClientState.crawling && MoveClientState.isLocal(self);
@@ -22,5 +23,6 @@ public class CrawlMixin {
             self.setPose(Pose.SWIMMING);
             ci.cancel();
         }
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 }

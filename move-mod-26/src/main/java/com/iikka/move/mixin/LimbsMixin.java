@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class LimbsMixin {
     @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("TAIL"))
     private void move$limbs(HumanoidRenderState hs, CallbackInfo ci) {
+        try {
         if (!(hs instanceof AvatarRenderState s)) return;
         HumanoidModel<?> m = (HumanoidModel<?>) (Object) this;
         float t;
@@ -68,5 +69,6 @@ public class LimbsMixin {
             m.rightLeg.xRot = Math.max(0, a) * -0.6f; m.leftLeg.xRot = Math.max(0, -a) * -0.6f;
             m.head.zRot = a * 0.15f;
         }
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 }

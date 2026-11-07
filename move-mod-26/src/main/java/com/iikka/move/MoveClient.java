@@ -26,6 +26,7 @@ public class MoveClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(AnimPayload.TYPE, (payload, ctx) -> {
             if (payload.kind() == Anim.STOP) { Anim.stop(payload.entityId()); return; }
             Anim.start(payload.entityId(), payload.kind());
+            if (true) return;
             Entity e = ctx.client().level == null ? null : ctx.client().level.getEntity(payload.entityId());
         });
         // Runs before the game handles keys, so a dash can stop Q from also dropping your item.
@@ -43,6 +44,7 @@ public class MoveClient implements ClientModInitializer {
 
     /** Picked in the F menu. */
     static void doEmote(byte kind) {
+        try {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null) return;
@@ -51,9 +53,11 @@ public class MoveClient implements ClientModInitializer {
         if (kind == Anim.STOP) Anim.stop(p.getId());
         if (Anim.isGesture(kind)) Anim.start(p.getId(), kind);
         send(kind);
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 
     private static void handleDashKey(Minecraft mc) {
+        try {
         LocalPlayer p = mc.player;
         boolean emoteOnSwap = emoteKey.same(mc.options.keySwapOffhand);
         while (emoteKey.consumeClick()) {
@@ -67,6 +71,7 @@ public class MoveClient implements ClientModInitializer {
             if (sameAsDrop) while (mc.options.keyDrop.consumeClick()) { }
             dash(mc, p);
         }
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 
     private static void dash(Minecraft mc, LocalPlayer p) {
@@ -86,6 +91,7 @@ public class MoveClient implements ClientModInitializer {
     }
 
     private static void tick(Minecraft mc) {
+        try {
         LocalPlayer p = mc.player;
         if (p == null || mc.level == null) { MoveClientState.crawling = false; return; }
         MoveClientState.localId = p.getId();
@@ -122,6 +128,7 @@ public class MoveClient implements ClientModInitializer {
             }
         }
 
+            } catch (Throwable move$t) { com.iikka.move.MoveMod.warn(move$t); }
     }
 
     private static void puff(Minecraft mc, Entity e, int n) {
