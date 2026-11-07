@@ -31,6 +31,7 @@ public class BodyMixin {
         if (e == null || !(e.getVehicle() instanceof Display.BlockDisplay seat)) return;
         if (seat.getCustomName() == null || !MoveMod.LAY_NAME.equals(seat.getCustomName().getString())) return;
         a.pose = Pose.SLEEPING;
+        a.nameTag = null;
         a.bedOrientation = null;
         a.isPassenger = false;
     }
@@ -48,5 +49,20 @@ public class BodyMixin {
         }
         float dash = Anim.progress(a.id, Anim.DASH);
         if (dash >= 0) pose.mulPose(Axis.XP.rotationDegrees(-28f * Anim.bump(dash)));
+        float sec;
+        if ((sec = Anim.seconds(a.id, Anim.BOW)) >= 0) {
+            float in = Math.min(1, sec * 3) * Math.min(1, (1.6f - sec) * 3);
+            pose.translate(0, 0.75f * a.scale, 0);
+            pose.mulPose(Axis.XP.rotationDegrees(-45f * in));
+            pose.translate(0, -0.75f * a.scale, 0);
+        }
+        if ((sec = Anim.seconds(a.id, Anim.DANCE)) >= 0) {
+            float b = sec * 7.5f;
+            pose.translate(0, Math.abs(Math.sin(b)) * 0.12f, 0);
+            pose.mulPose(Axis.ZP.rotationDegrees((float) Math.sin(b) * 9f));
+            pose.mulPose(Axis.YP.rotationDegrees((float) Math.sin(b * 0.5f) * 20f));
+        }
+        if ((sec = Anim.seconds(a.id, Anim.CHEER)) >= 0)
+            pose.translate(0, Math.abs(Math.sin(sec * 10)) * 0.15f * Math.min(1, (2.4f - sec) * 4), 0);
     }
 }

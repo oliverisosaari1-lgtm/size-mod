@@ -15,14 +15,16 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 public class MoveClient implements ClientModInitializer {
-    private static KeyMapping dashKey;
+    private static KeyMapping dashKey, emoteKey;
     private static boolean jumpReleased, doubleJumpUsed, dashUsedInAir;
     private static int airTicks, dashCooldown;
 
     @Override
     public void onInitializeClient() {
         dashKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.olkkumove.dash", InputConstants.KEY_Q, KeyMapping.Category.MOVEMENT));
+        emoteKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.olkkumove.emotes", InputConstants.KEY_F, KeyMapping.Category.MOVEMENT));
         ClientPlayNetworking.registerGlobalReceiver(AnimPayload.TYPE, (payload, ctx) -> {
+            if (payload.kind() == Anim.STOP) { Anim.stop(payload.entityId()); return; }
             Anim.start(payload.entityId(), payload.kind());
             Entity e = ctx.client().level == null ? null : ctx.client().level.getEntity(payload.entityId());
             if (e != null && payload.kind() == Anim.FLIP) puff(ctx.client(), e, 10);
@@ -36,8 +38,30 @@ public class MoveClient implements ClientModInitializer {
         return p.input != null && p.input.getMoveVector().lengthSquared() > 0.01f;
     }
 
+    private static void send(byte kind) {
+        if (ClientPlayNetworking.canSend(MovePayload.TYPE)) ClientPlayNetworking.send(new MovePayload(kind));
+    }
+
+    /** Picked in the F menu. */
+    static void doEmote(byte kind) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer p = mc.player;
+        if (p == null) return;
+        if (kind == Anim.CRAWL) MoveClientState.crawling = !MoveClientState.crawling;
+        else MoveClientState.crawling = false;
+        if (kind == Anim.STOP) Anim.stop(p.getId());
+        if (Anim.isGesture(kind)) Anim.start(p.getId(), kind);
+        send(kind);
+    }
+
     private static void handleDashKey(Minecraft mc) {
         LocalPlayer p = mc.player;
+        boolean emoteOnSwap = emoteKey.same(mc.options.keySwapOffhand);
+        while (emoteKey.consumeClick()) {
+            if (emoteOnSwap) while (mc.options.keySwapOffhand.consumeClick()) { }
+            if (p != null && mc.screen == null) mc.setScreen(new EmoteScreen());
+        }
+        if (mc.screen instanceof EmoteScreen && emoteOnSwap) while (mc.options.keySwapOffhand.consumeClick()) { }
         boolean sameAsDrop = dashKey.same(mc.options.keyDrop);
         while (dashKey.consumeClick()) {
             if (p == null || mc.screen != null || !moving(p)) continue; // standing still: Q drops like normal
@@ -64,8 +88,21 @@ public class MoveClient implements ClientModInitializer {
 
     private static void tick(Minecraft mc) {
         LocalPlayer p = mc.player;
-        if (p == null || mc.level == null) return;
+        if (p == null || mc.level == null) { MoveClientState.crawling = false; return; }
+        MoveClientState.localId = p.getId();
         if (dashCooldown > 0) dashCooldown--;
+
+        // Moving or jumping ends an emote; jumping ends crawling.
+        long[] mine = Anim.all().get(p.getId());
+        if (mine != null && Anim.isGesture(mine[0]) && (moving(p) || mc.options.keyJump.isDown())) {
+            Anim.stop(p.getId());
+            send(Anim.STOP);
+        }
+        if (MoveClientState.crawling && mc.options.keyJump.isDown() && mc.screen == null) {
+            MoveClientState.crawling = false;
+            send(Anim.STOP);
+            jumpReleased = false;
+        }
 
         // Double jump: press jump again while in the air.
         boolean jumpDown = mc.options.keyJump.isDown();

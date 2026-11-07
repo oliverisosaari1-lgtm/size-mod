@@ -37,6 +37,9 @@ public class MoveMod implements ModInitializer {
 
     private static final Map<Entity, Seat> seats = new HashMap<>();
     private static final List<Entity> strays = new ArrayList<>();
+    private static final java.util.Set<UUID> crawling = new java.util.HashSet<>();
+
+    public static boolean isCrawling(UUID id) { return crawling.contains(id); }
 
     private static void bar(ServerPlayer p, String text) {
         p.displayClientMessage(Component.literal(text).withStyle(ChatFormatting.AQUA), true);
@@ -91,17 +94,38 @@ public class MoveMod implements ModInitializer {
         }
     }
 
-    private static void onMove(ServerPlayer p, byte kind) {
-        if (p.isPassenger() || p.isSpectator()) return;
-        ServerLevel level = (ServerLevel) p.level();
-        p.resetFallDistance();
-        if (kind == 1) {
-            level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PHANTOM_FLAP, SoundSource.PLAYERS, 0.6f, 1.6f);
-        } else if (kind == 2) {
-            level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.7f, 1.4f);
-        } else return;
+    private static void broadcast(ServerPlayer p, byte kind) {
         AnimPayload anim = new AnimPayload(p.getId(), kind);
         for (ServerPlayer o : PlayerLookup.tracking(p)) if (o != p && ServerPlayNetworking.canSend(o, AnimPayload.TYPE)) ServerPlayNetworking.send(o, anim);
+    }
+
+    private static void onMove(ServerPlayer p, byte kind) {
+        if (p.isSpectator()) return;
+        ServerLevel level = (ServerLevel) p.level();
+        switch (kind) {
+            case Anim.STOP -> {
+                crawling.remove(p.getUUID());
+                if (onOurSeat(p)) p.stopRiding();
+                broadcast(p, Anim.STOP);
+            }
+            case Anim.SIT -> { crawling.remove(p.getUUID()); seat(p, false); }
+            case Anim.LAY -> { crawling.remove(p.getUUID()); seat(p, true); }
+            case Anim.CRAWL -> {
+                if (onOurSeat(p)) p.stopRiding();
+                if (crawling.remove(p.getUUID())) bar(p, "You stand up.");
+                else { crawling.add(p.getUUID()); bar(p, "You crawl. Press Jump to stand up."); }
+            }
+            case Anim.FLIP, Anim.DASH -> {
+                if (p.isPassenger()) return;
+                p.resetFallDistance();
+                if (kind == Anim.FLIP) level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PHANTOM_FLAP, SoundSource.PLAYERS, 0.6f, 1.6f);
+                else level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.7f, 1.4f);
+                broadcast(p, kind);
+            }
+            default -> {
+                if (Anim.isGesture(kind)) broadcast(p, kind);
+            }
+        }
     }
 
     @Override
@@ -115,6 +139,7 @@ public class MoveMod implements ModInitializer {
             d.register(Commands.literal("lay").executes(ctx -> seat(ctx.getSource().getPlayerOrException(), true)));
         });
         ServerTickEvents.END_SERVER_TICK.register(MoveMod::tick);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, srv) -> crawling.remove(h.player.getUUID()));
         // Old seats left in the world after a restart get cleaned up.
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
             if (e instanceof Display && e.getTags().contains(SEAT_TAG) && !seats.containsKey(e)) strays.add(e);

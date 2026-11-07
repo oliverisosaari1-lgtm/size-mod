@@ -30,6 +30,8 @@ jobs:
           javap -p -s -cp "$CL" net.minecraft.client.model.player.PlayerModel | grep -q '(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V'
           javap -p -cp "$CL" net.minecraft.client.renderer.entity.player.AvatarRenderer | grep setupRotations
           javap -p -c -cp "$CL" net.minecraft.client.renderer.entity.player.AvatarRenderer | grep -A40 'void setupRotations(net.minecraft.client.renderer.entity.state.AvatarRenderState' | grep -i 'invokespecial\|return' | head
+          javap -p -s -cp "$CL" net.minecraft.world.entity.player.Player | grep -A1 'updatePlayerPose'
+          javap -p -s -cp "$CL" net.minecraft.client.model.HumanoidModel | grep -q '(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V'
           echo HOOKS OK
       - name: Test that a server starts with the mod (mixins load)
         run: |
