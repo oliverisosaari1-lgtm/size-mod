@@ -126,13 +126,13 @@ public final class Fx {
 
     public static void push(Entity e, Vec3 v) {
         e.setDeltaMovement(e.getDeltaMovement().add(v));
-        e.hurtMarked = true;
+        e.needsSync = true;
         if (e instanceof ServerPlayer sp) SillyMod.protectFall(sp);
     }
 
     public static void setVel(Entity e, Vec3 v) {
         e.setDeltaMovement(v);
-        e.hurtMarked = true;
+        e.needsSync = true;
         if (e instanceof ServerPlayer sp) SillyMod.protectFall(sp);
     }
 
@@ -174,7 +174,7 @@ public final class Fx {
         if (e == null) return null;
         e.snapTo(at.x, at.y, at.z, p.getYRot(), p.getXRot());
         e.setDeltaMovement(vel);
-        e.setInvulnerable(true);
+        e.setPermanentlyInvulnerable(true);
         if (noGravity) e.setNoGravity(true);
         if (e instanceof Mob m) m.setNoAi(true);
         if (e instanceof Projectile pr) pr.setOwner(p);

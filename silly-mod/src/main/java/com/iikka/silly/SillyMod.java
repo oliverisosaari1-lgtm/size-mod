@@ -244,7 +244,7 @@ public class SillyMod implements ModInitializer {
         CURRENT.put(p.getUUID(), w);
         ItemStack s = makeItem(w);
         if (slot >= 0 && slot < 36) inv.setItem(slot, s);
-        else if (!inv.add(s)) p.drop(s, false);
+        else if (!inv.add(s)) p.level().addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(p.level(), p.getX(), p.getY(), p.getZ(), s));
         ServerLevel l = (ServerLevel) p.level();
         Fx.sound(l, p.position(), "entity.player.levelup", 0.7f, 1.6f);
         Fx.parts(l, net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING, p.position().add(0, 1, 0), 20, 0.5, 0.3);
