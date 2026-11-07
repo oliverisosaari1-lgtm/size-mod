@@ -21,6 +21,16 @@ jobs:
         with:
           gradle-version: "9.2.0"
       - run: gradle build --stacktrace
+      - name: Check animation hook targets
+        run: |
+          CL=$(find ~/.gradle/caches .gradle -path '*1.21.11*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' | head -1)
+          javap -p -s -cp "$CL" net.minecraft.client.renderer.entity.LivingEntityRenderer > lr.txt
+          grep -q '(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V' lr.txt
+          grep -q '(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;FF)V' lr.txt
+          javap -p -s -cp "$CL" net.minecraft.client.model.player.PlayerModel | grep -q '(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V'
+          javap -p -cp "$CL" net.minecraft.client.renderer.entity.player.AvatarRenderer | grep setupRotations
+          javap -p -c -cp "$CL" net.minecraft.client.renderer.entity.player.AvatarRenderer | grep -A40 'void setupRotations(net.minecraft.client.renderer.entity.state.AvatarRenderState' | grep -i 'invokespecial\|return' | head
+          echo HOOKS OK
       - name: Test that a server starts with the mod (mixins load)
         run: |
           JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
