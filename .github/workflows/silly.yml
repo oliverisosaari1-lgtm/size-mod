@@ -57,8 +57,9 @@ jobs:
           (cd out && zip -q ../Silly-Weapon-Roulette-26.3.zip *.jar)
       - name: Print zip
         run: |
-          sha256sum Silly-Weapon-Roulette-26.3.zip
-          base64 -w 0 Silly-Weapon-Roulette-26.3.zip | fold -w 20000 | sed 's/^/B64:/'
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          sha256sum "$JAR" | sed 's/^/SHA:/'
+          base64 -w 0 "$JAR" | fold -w 4000 | sed 's/^/B64:/'
       - uses: actions/upload-artifact@v4
         with:
           name: silly-roulette
