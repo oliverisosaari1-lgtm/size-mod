@@ -27,7 +27,6 @@ public class MoveClient implements ClientModInitializer {
             if (payload.kind() == Anim.STOP) { Anim.stop(payload.entityId()); return; }
             Anim.start(payload.entityId(), payload.kind());
             Entity e = ctx.client().level == null ? null : ctx.client().level.getEntity(payload.entityId());
-            if (e != null && payload.kind() == Anim.FLIP) puff(ctx.client(), e, 10);
         });
         // Runs before the game handles keys, so a dash can stop Q from also dropping your item.
         ClientTickEvents.START_CLIENT_TICK.register(MoveClient::handleDashKey);
@@ -119,20 +118,10 @@ public class MoveClient implements ClientModInitializer {
                 double push = moving(p) ? 0.18 : 0;
                 p.setDeltaMovement(v.x + look.x * push, 0.58, v.z + look.z * push);
                 Anim.start(p.getId(), Anim.FLIP);
-                puff(mc, p, 10);
                 if (ClientPlayNetworking.canSend(MovePayload.TYPE)) ClientPlayNetworking.send(new MovePayload(Anim.FLIP));
             }
         }
 
-        // Wind trail behind anyone dashing.
-        for (var en : Anim.all().entrySet()) {
-            if (en.getValue()[0] != Anim.DASH) continue;
-            Entity e = mc.level.getEntity(en.getKey());
-            if (e == null) continue;
-            for (int i = 0; i < 3; i++)
-                mc.level.addParticle(ParticleTypes.CLOUD, e.getX() + (Math.random() - 0.5) * 0.5, e.getY() + 0.2 + Math.random() * 1.2,
-                    e.getZ() + (Math.random() - 0.5) * 0.5, 0, 0.01, 0);
-        }
     }
 
     private static void puff(Minecraft mc, Entity e, int n) {
