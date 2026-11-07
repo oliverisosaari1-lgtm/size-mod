@@ -278,8 +278,8 @@ public final class Weapons {
             beam(l, ParticleTypes.CLOUD, p.getEyePosition(), t.position().add(0, 1, 0), 0.6);
             sound(l, t.position(), "block.piston.extend", 2, 0.7f);
         });
-        use("Lightning Wand", Y, Items.LIGHTNING_ROD, "Zap where you look", 30, (p, l) -> lightning(l, lookPoint(p, 60), p));
-        use("Triple Lightning", Y, Items.LIGHTNING_ROD, "Zap zap zap", 50, (p, l) -> {
+        use("Lightning Wand", Y, Items.BLAZE_POWDER, "Zap where you look", 30, (p, l) -> lightning(l, lookPoint(p, 60), p));
+        use("Triple Lightning", Y, Items.BLAZE_POWDER, "Zap zap zap", 50, (p, l) -> {
             Vec3 at = lookPoint(p, 60);
             for (int i = 0; i < 3; i++) { int d = i; SillyMod.later(i * 6, () -> lightning(l, at.add((R.nextDouble() - 0.5) * 5 * d, 0, (R.nextDouble() - 0.5) * 5 * d), p)); }
         });
