@@ -42,7 +42,9 @@ public class MoveMod implements ModInitializer {
     public static boolean isCrawling(UUID id) { return crawling.contains(id); }
 
     /** Players who dashed or double jumped: no fall damage until they land. Value = ticks since. */
-    private static final Map<UUID, Integer> noFall = new HashMap<>();
+    private static final Map<UUID, Integer> noFall = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static boolean isFallSafe(ServerPlayer p) { return noFall.containsKey(p.getUUID()); }
 
     private static void bar(ServerPlayer p, String text) {
         p.sendSystemMessage(Component.literal(text).withStyle(ChatFormatting.AQUA), true);
@@ -148,7 +150,13 @@ public class MoveMod implements ModInitializer {
     public void onInitialize() {
         PayloadTypeRegistry.serverboundPlay().register(MovePayload.TYPE, MovePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AnimPayload.TYPE, AnimPayload.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(MovePayload.TYPE, (payload, ctx) -> onMove(ctx.player(), payload.kind()));
+        ServerPlayNetworking.registerGlobalReceiver(MovePayload.TYPE, (payload, ctx) -> {
+            ServerPlayer p = ctx.player();
+            if (payload.kind() == Anim.FLIP || payload.kind() == Anim.DASH) noFall.put(p.getUUID(), 0);
+            var srv = p.level().getServer();
+            if (srv != null && !srv.isSameThread()) srv.execute(() -> onMove(p, payload.kind()));
+            else onMove(p, payload.kind());
+        });
 
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {
             d.register(Commands.literal("sit").executes(ctx -> seat(ctx.getSource().getPlayerOrException(), false)));
