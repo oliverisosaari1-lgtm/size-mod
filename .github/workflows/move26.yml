@@ -21,37 +21,11 @@ jobs:
         with:
           gradle-version: current
       - run: gradle build --stacktrace
-      - name: Probe 26.3
-        if: always()
-        run: |
-          CL=$(find ~/.gradle/caches .gradle -path '*26.3*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' | head -1); echo "$CL"
-          J="javap -p -cp $CL"
-          $J com.mojang.blaze3d.vertex.PoseStack | grep -i 'mul\|rotat\|translate'
-          $J com.mojang.math.Axis | head -12
-          $J net.minecraft.world.entity.EntityType | grep -i 'DISPLAY' | head; $J net.minecraft.world.entity.EntityTypes 2>&1 | grep -i 'DISPLAY' | head -4
-          $J net.minecraft.world.entity.Entity | grep -i 'tag' | head
-          $J net.minecraft.client.renderer.entity.LivingEntityRenderer | grep -i 'submit\|setupRotations\|extract'
-          $J net.minecraft.client.model.HumanoidModel | grep -i 'setupAnim\|ModelPart'
-          $J net.minecraft.world.entity.player.Player | grep -i 'pose\|getName'
-          $J net.minecraft.client.renderer.entity.state.AvatarRenderState | grep -i ' id\|nameTag'
-          $J net.minecraft.client.renderer.entity.state.EntityRenderState | grep -i 'nameTag\| id'
-          $J net.minecraft.client.renderer.entity.state.LivingEntityRenderState | grep -i 'pose\|bed\|scale'
-          $J net.minecraft.client.renderer.entity.state.HumanoidRenderState | grep -i 'passenger'
-          $J net.minecraft.client.KeyMapping\$Category | head -20
-          $J net.minecraft.client.gui.GuiGraphicsExtractor | grep -i 'center\|text(' | head
-          $J net.minecraft.client.gui.screens.Screen | grep -i 'pause\|extractRenderState\|background\|onClose'
-          $J net.minecraft.client.Minecraft | grep -i ' options\| gui\| player\| level'
-          $J net.minecraft.client.player.LocalPlayer | grep -i 'input'
-          $J net.minecraft.client.player.ClientInput | grep -i 'move'
-          $J net.minecraft.world.entity.Display | grep -i 'class\|customname' | head
-          $J net.minecraft.world.entity.Entity | grep -i 'customname\|startRiding\|resetFall\|getFirstPassenger\|positionRider\|teleportTo\|isRemoved\|discard' | head -20
-          $J net.minecraft.server.level.ServerPlayer | grep -i 'message\|teleportTo' | head
-          ls ~/.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/ | grep -i 'key\|network\|lifecycle\|command'
       - name: Check animation hook targets
         run: |
           CL=$(find ~/.gradle/caches .gradle -path '*26.3*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/client/renderer/GameRenderer.class" && echo "{}"' | head -1)
           javap -p -s -cp "$CL" net.minecraft.client.renderer.entity.LivingEntityRenderer > lr.txt
-          grep -q '(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V' lr.txt
+          grep -q '(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V' lr.txt
           grep -q '(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;FF)V' lr.txt
           javap -p -s -cp "$CL" net.minecraft.client.model.player.PlayerModel | grep -q '(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V'
           javap -p -cp "$CL" net.minecraft.client.renderer.entity.player.AvatarRenderer | grep setupRotations

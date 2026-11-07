@@ -1,6 +1,6 @@
 package com.iikka.move;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -30,9 +30,9 @@ public class EmoteScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float delta) {
-        super.render(g, mx, my, delta);
-        g.drawCenteredString(font, "Pick an emote (F to close)", width / 2, height / 2 - Math.min(100, height / 3) - 28, 0xFFFFFFFF);
+    public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
+        super.extractRenderState(g, mx, my, delta);
+        g.centeredText(font, "Pick an emote (F to close)", width / 2, height / 2 - Math.min(100, height / 3) - 28, 0xFFFFFFFF);
     }
 
     @Override

@@ -3,7 +3,7 @@ package com.iikka.move;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -21,8 +21,8 @@ public class MoveClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        dashKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.olkkumove.dash", InputConstants.KEY_Q, KeyMapping.Category.MOVEMENT));
-        emoteKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.olkkumove.emotes", InputConstants.KEY_F, KeyMapping.Category.MOVEMENT));
+        dashKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.olkkumove.dash", InputConstants.KEY_Q, KeyMapping.Category.MOVEMENT));
+        emoteKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.olkkumove.emotes", InputConstants.KEY_F, KeyMapping.Category.MOVEMENT));
         ClientPlayNetworking.registerGlobalReceiver(AnimPayload.TYPE, (payload, ctx) -> {
             if (payload.kind() == Anim.STOP) { Anim.stop(payload.entityId()); return; }
             Anim.start(payload.entityId(), payload.kind());
@@ -59,12 +59,12 @@ public class MoveClient implements ClientModInitializer {
         boolean emoteOnSwap = emoteKey.same(mc.options.keySwapOffhand);
         while (emoteKey.consumeClick()) {
             if (emoteOnSwap) while (mc.options.keySwapOffhand.consumeClick()) { }
-            if (p != null && mc.screen == null) mc.setScreen(new EmoteScreen());
+            if (p != null && mc.gui.screen() == null) mc.gui.setScreen(new EmoteScreen());
         }
-        if (mc.screen instanceof EmoteScreen && emoteOnSwap) while (mc.options.keySwapOffhand.consumeClick()) { }
+        if (mc.gui.screen() instanceof EmoteScreen && emoteOnSwap) while (mc.options.keySwapOffhand.consumeClick()) { }
         boolean sameAsDrop = dashKey.same(mc.options.keyDrop);
         while (dashKey.consumeClick()) {
-            if (p == null || mc.screen != null || !moving(p)) continue; // standing still: Q drops like normal
+            if (p == null || mc.gui.screen() != null || !moving(p)) continue; // standing still: Q drops like normal
             if (sameAsDrop) while (mc.options.keyDrop.consumeClick()) { }
             dash(mc, p);
         }
@@ -98,7 +98,7 @@ public class MoveClient implements ClientModInitializer {
             Anim.stop(p.getId());
             send(Anim.STOP);
         }
-        if (MoveClientState.crawling && mc.options.keyJump.isDown() && mc.screen == null) {
+        if (MoveClientState.crawling && mc.options.keyJump.isDown() && mc.gui.screen() == null) {
             MoveClientState.crawling = false;
             send(Anim.STOP);
             jumpReleased = false;
@@ -111,7 +111,7 @@ public class MoveClient implements ClientModInitializer {
         } else {
             airTicks++;
             if (!jumpDown) jumpReleased = true;
-            else if (jumpReleased && !doubleJumpUsed && airTicks > 2 && mc.screen == null
+            else if (jumpReleased && !doubleJumpUsed && airTicks > 2 && mc.gui.screen() == null
                 && !p.getAbilities().mayfly && !p.isFallFlying() && !p.isSpectator()) {
                 doubleJumpUsed = true;
                 Vec3 v = p.getDeltaMovement();

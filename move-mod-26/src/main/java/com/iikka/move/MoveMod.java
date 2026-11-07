@@ -17,7 +17,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +42,7 @@ public class MoveMod implements ModInitializer {
     public static boolean isCrawling(UUID id) { return crawling.contains(id); }
 
     private static void bar(ServerPlayer p, String text) {
-        p.displayClientMessage(Component.literal(text).withStyle(ChatFormatting.AQUA), true);
+        p.sendSystemMessage(Component.literal(text).withStyle(ChatFormatting.AQUA), true);
     }
 
     private static boolean onOurSeat(ServerPlayer p) {
@@ -55,10 +55,10 @@ public class MoveMod implements ModInitializer {
         if (!p.onGround()) { bar(p, "Stand on the ground first."); return 0; }
         ServerLevel level = (ServerLevel) p.level();
         double ground = p.getY();
-        Display seat = lay ? new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level) : new Display.ItemDisplay(EntityType.ITEM_DISPLAY, level);
+        Display seat = lay ? new Display.BlockDisplay(EntityTypes.BLOCK_DISPLAY, level) : new Display.ItemDisplay(EntityTypes.ITEM_DISPLAY, level);
         seat.setPos(p.getX(), ground, p.getZ());
-        seat.addTag(SEAT_TAG);
-        if (lay) { seat.setCustomName(Component.literal(LAY_NAME)); seat.setCustomNameVisible(false); }
+        seat.setCustomName(Component.literal(lay ? LAY_NAME : SEAT_TAG));
+        seat.setCustomNameVisible(false);
         level.addFreshEntity(seat);
         // Sitting: legs rest on the ground. Lying: back rests on the ground.
         seats.put(seat, new Seat(p.getUUID(), ground, lay ? ground + 0.13 : ground - 0.55));
@@ -130,8 +130,8 @@ public class MoveMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        PayloadTypeRegistry.playC2S().register(MovePayload.TYPE, MovePayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(AnimPayload.TYPE, AnimPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MovePayload.TYPE, MovePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AnimPayload.TYPE, AnimPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(MovePayload.TYPE, (payload, ctx) -> onMove(ctx.player(), payload.kind()));
 
         CommandRegistrationCallback.EVENT.register((d, reg, env) -> {
@@ -142,7 +142,8 @@ public class MoveMod implements ModInitializer {
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, srv) -> crawling.remove(h.player.getUUID()));
         // Old seats left in the world after a restart get cleaned up.
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
-            if (e instanceof Display && e.getTags().contains(SEAT_TAG) && !seats.containsKey(e)) strays.add(e);
+            if (e instanceof Display && e.getCustomName() != null && !seats.containsKey(e)
+                && (SEAT_TAG.equals(e.getCustomName().getString()) || LAY_NAME.equals(e.getCustomName().getString()))) strays.add(e);
         });
     }
 }

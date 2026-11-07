@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Lying pose for /lay, plus the flip and dash lean. */
 @Mixin(LivingEntityRenderer.class)
 public class BodyMixin {
-    @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V",
+    @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
         at = @At("HEAD"))
     private void move$lay(LivingEntityRenderState state, PoseStack pose, SubmitNodeCollector c, CameraRenderState cam, CallbackInfo ci) {
         if (!(state instanceof AvatarRenderState a)) return;
@@ -44,27 +44,27 @@ public class BodyMixin {
         if (flip >= 0) {
             float mid = 0.95f * a.scale;
             pose.translate(0, mid, 0);
-            pose.mulPose(Axis.XP.rotationDegrees(-360f * Anim.easeInOut(flip)));
+            pose.rotate(Axis.XP.rotationDegrees(-360f * Anim.easeInOut(flip)));
             pose.translate(0, -mid, 0);
         }
         float dash = Anim.progress(a.id, Anim.DASH);
-        if (dash >= 0) pose.mulPose(Axis.XP.rotationDegrees(-28f * Anim.bump(dash)));
+        if (dash >= 0) pose.rotate(Axis.XP.rotationDegrees(-28f * Anim.bump(dash)));
         float sec;
         if ((sec = Anim.seconds(a.id, Anim.BOW)) >= 0) {
             float in = Math.min(1, sec * 3) * Math.min(1, (1.6f - sec) * 3);
             pose.translate(0, 0.75f * a.scale, 0);
-            pose.mulPose(Axis.XP.rotationDegrees(-45f * in));
+            pose.rotate(Axis.XP.rotationDegrees(-45f * in));
             pose.translate(0, -0.75f * a.scale, 0);
         }
         if ((sec = Anim.seconds(a.id, Anim.DANCE)) >= 0) {
             float b = sec * 7.5f;
             pose.translate(0, Math.abs(Math.sin(b)) * 0.12f, 0);
-            pose.mulPose(Axis.ZP.rotationDegrees((float) Math.sin(b) * 9f));
-            pose.mulPose(Axis.YP.rotationDegrees((float) Math.sin(b * 0.5f) * 20f));
+            pose.rotate(Axis.ZP.rotationDegrees((float) Math.sin(b) * 9f));
+            pose.rotate(Axis.YP.rotationDegrees((float) Math.sin(b * 0.5f) * 20f));
         }
         if ((sec = Anim.seconds(a.id, Anim.CAT)) >= 0) {
             float[] v = com.iikka.move.CatDance.at(sec);
-            pose.mulPose(Axis.ZP.rotationDegrees(v[9]));
+            pose.rotate(Axis.ZP.rotationDegrees(v[9]));
             pose.translate(0, Math.abs(Math.sin(sec * Math.PI / 0.5)) * 0.05f, 0);
         }
         if ((sec = Anim.seconds(a.id, Anim.CHEER)) >= 0)
