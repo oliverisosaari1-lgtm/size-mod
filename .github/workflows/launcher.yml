@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24.7"
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri > /dev/null
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libgl1 libglx-mesa0 libopenal1 > /dev/null
       - name: Install and start Minecraft
         working-directory: launcher
         env:
@@ -30,7 +30,8 @@ jobs:
           BOOST: ${{ matrix.boost }}
           OLKKU: ${{ matrix.olkku }}
           LIBGL_ALWAYS_SOFTWARE: "1"
+          ALSOFT_DRIVERS: "null"
         run: |
           go build -o olc .
-          xvfb-run -a -s "-screen 0 1280x720x24" ./olc test "${{ matrix.mc }}" "${{ matrix.loader }}" 100 2>&1 | tail -90
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./olc test "${{ matrix.mc }}" "${{ matrix.loader }}" 100 2>&1 | tail -90
           ls /tmp/olkku/instances/*/mods 2>/dev/null || true
