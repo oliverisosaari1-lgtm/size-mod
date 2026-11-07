@@ -62,6 +62,11 @@ public class BodyMixin {
             pose.mulPose(Axis.ZP.rotationDegrees((float) Math.sin(b) * 9f));
             pose.mulPose(Axis.YP.rotationDegrees((float) Math.sin(b * 0.5f) * 20f));
         }
+        if ((sec = Anim.seconds(a.id, Anim.CAT)) >= 0) {
+            float[] v = com.iikka.move.CatDance.at(sec);
+            pose.mulPose(Axis.ZP.rotationDegrees(v[9]));
+            pose.translate(0, Math.abs(Math.sin(sec * Math.PI / 0.5)) * 0.05f, 0);
+        }
         if ((sec = Anim.seconds(a.id, Anim.CHEER)) >= 0)
             pose.translate(0, Math.abs(Math.sin(sec * 10)) * 0.15f * Math.min(1, (2.4f - sec) * 4), 0);
     }

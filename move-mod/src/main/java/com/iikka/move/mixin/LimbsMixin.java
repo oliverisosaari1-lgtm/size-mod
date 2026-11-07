@@ -54,6 +54,12 @@ public class LimbsMixin {
             m.rightArm.xRot = (-2.8f + w * 0.2f) * in; m.leftArm.xRot = (-2.8f - w * 0.2f) * in;
             m.rightArm.zRot = 0.45f * in; m.leftArm.zRot = -0.45f * in;
         }
+        if ((sec = Anim.seconds(s.id, Anim.CAT)) >= 0) {
+            float[] v = com.iikka.move.CatDance.at(sec);
+            m.rightArm.xRot = v[1]; m.rightArm.yRot = v[2]; m.rightArm.zRot = v[3];
+            m.leftArm.xRot = v[4]; m.leftArm.yRot = v[5]; m.leftArm.zRot = v[6];
+            m.head.xRot = v[7]; m.head.zRot = v[8];
+        }
         if ((sec = Anim.seconds(s.id, Anim.DANCE)) >= 0) {
             float b = sec * 7.5f;
             float a = (float) Math.sin(b), c = (float) Math.cos(b);

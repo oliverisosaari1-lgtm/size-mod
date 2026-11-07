@@ -5,18 +5,18 @@ import java.util.Map;
 
 /** Client-side: which players are flipping or dashing right now. */
 public final class Anim {
-    public static final byte STOP = 0, FLIP = 1, DASH = 2, WAVE = 3, DANCE = 4, CLAP = 5, BOW = 6, CHEER = 7;
+    public static final byte STOP = 0, FLIP = 1, DASH = 2, WAVE = 3, DANCE = 4, CLAP = 5, BOW = 6, CHEER = 7, CAT = 8;
     public static final byte SIT = 10, LAY = 11, CRAWL = 12;
 
     static long length(long kind) {
         return switch ((int) kind) {
             case FLIP -> 520; case DASH -> 380; case WAVE -> 2400; case DANCE -> 10000;
-            case CLAP -> 2200; case BOW -> 1600; case CHEER -> 2400; default -> 1000;
+            case CLAP -> 2200; case BOW -> 1600; case CHEER -> 2400; case CAT -> 9600; default -> 1000;
         };
     }
 
     /** Emotes that stop when you move. */
-    public static boolean isGesture(long kind) { return kind >= WAVE && kind <= CHEER; }
+    public static boolean isGesture(long kind) { return kind >= WAVE && kind <= CAT; }
 
     public static void stop(int id) { running.remove(id); }
 
