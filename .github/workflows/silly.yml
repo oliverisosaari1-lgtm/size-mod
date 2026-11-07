@@ -20,6 +20,14 @@ jobs:
         with:
           gradle-version: current
       - run: gradle build --stacktrace
+      - name: Probe names
+        if: always()
+        run: |
+          CL=$(find ~/.gradle/caches .gradle -path '*26.3*' -name '*.jar' 2>/dev/null | xargs -I{} sh -c 'unzip -l "{}" 2>/dev/null | grep -q "net/minecraft/world/level/block/Blocks.class" && echo "{}"' | head -1)
+          echo "JAR $CL"
+          javap -cp "$CL" net.minecraft.world.level.block.Blocks | grep -iE 'wool|concrete|chain|terracotta|stained|dye|color' | head -40
+          javap -cp "$CL" net.minecraft.world.item.Items | grep -iE 'dye|wool|chain' | head -20
+          javap -cp "$CL" net.minecraft.world.entity.EntityTypes | grep -iE 'boat|cod|puffer' | head
       - name: Test in a real server (new world, all maps, every weapon)
         run: |
           JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
