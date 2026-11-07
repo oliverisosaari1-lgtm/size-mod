@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "package": "com.iikka.nick.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["ChunkMapAccess", "TrackedEntityAccess", "ProfilePacketMixin", "PlayerNameMixin"],
+  "client": ["ClientPlayerAccess"],
+  "injectors": { "defaultRequire": 1 }
+}
