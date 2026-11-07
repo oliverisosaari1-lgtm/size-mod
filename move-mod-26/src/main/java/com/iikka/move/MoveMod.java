@@ -71,13 +71,19 @@ public class MoveMod implements ModInitializer {
     }
 
     private static void tick(MinecraftServer server) {
+        // Value: ticks since the move, or -1000 once you have been in the air.
         noFall.entrySet().removeIf(en -> {
             ServerPlayer p = server.getPlayerList().getPlayer(en.getKey());
             if (p == null) return true;
-            en.setValue(en.getValue() + 1);
-            return en.getValue() > 5 && (p.onGround() || p.isInWater());
-        });
-        for (Entity e : strays) if (!seats.containsKey(e)) e.discard();
+            int v = en.getValue();
+            boolean grounded = p.onGround() || p.isInWater();
+            if (!grounded) v = -1000;
+            else if (v < 0) return true;            // landed after being in the air
+            else if (++v > 40) return true;         // dashed on the ground and never left it
+            en.setValue(v);
+            p.resetFallDistance();                  // the fall never adds up while protected
+            return false;
+        });        for (Entity e : strays) if (!seats.containsKey(e)) e.discard();
         strays.clear();
         Iterator<Map.Entry<Entity, Seat>> it = seats.entrySet().iterator();
         while (it.hasNext()) {
