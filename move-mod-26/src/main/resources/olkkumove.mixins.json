@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "package": "com.iikka.move.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": ["CrawlMixin"],
+  "client": ["BodyMixin", "LimbsMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

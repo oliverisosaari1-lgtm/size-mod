@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "olkkumove",
+  "version": "${version}",
+  "name": "Sit and Move",
+  "description": "/sit and /lay anywhere, double jump, and dash with Q while moving.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.iikka.move.MoveMod"],
+    "client": ["com.iikka.move.MoveClient"]
+  },
+  "mixins": ["olkkumove.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
