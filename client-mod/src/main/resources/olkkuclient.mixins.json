@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.iikka.olkkuclient.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["KeyMappingAccess", "CapeMixin", "ZoomMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

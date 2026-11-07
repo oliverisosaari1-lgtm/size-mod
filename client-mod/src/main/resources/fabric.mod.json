@@ -3,7 +3,11 @@
   "id": "olkkusclient",
   "version": "${version}",
   "name": "Olkku's Client",
+  "description": "Right Shift opens the Olkku's Client menu: FPS, CPS, keystrokes, armor, ping, zoom and capes.",
+  "authors": ["Iikka"],
+  "license": "MIT",
   "environment": "client",
   "entrypoints": { "client": ["com.iikka.olkkuclient.OlkkuClient"] },
-  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~26.3", "fabric-api": "*" }
+  "mixins": ["olkkuclient.mixins.json"],
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~26.3", "java": ">=25", "fabric-api": "*" }
 }
