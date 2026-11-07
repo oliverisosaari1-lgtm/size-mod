@@ -18,7 +18,7 @@ public final class Hud {
 
     public static void draw(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) return;
+        if (mc.player == null) return;
         Config c = Config.INSTANCE;
         Font f = mc.font;
         int y = 4;
