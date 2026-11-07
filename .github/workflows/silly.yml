@@ -1,0 +1,52 @@
+name: Build Silly Weapon Roulette 26.3
+on:
+  push:
+    branches: [silly]
+    paths: ['silly-mod/**', '.github/workflows/silly.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: silly-mod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: current
+      - run: gradle build --stacktrace
+      - name: Test in a real server (new world, all maps, every weapon)
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          API=$(grep '^fabric_version=' gradle.properties | cut -d= -f2)
+          LOADER=$(grep '^loader_version=' gradle.properties | cut -d= -f2)
+          INSTALLER=$(curl -sSf https://meta.fabricmc.net/v2/versions/installer | jq -r '[.[]|select(.stable)][0].version')
+          mkdir -p /tmp/st/mods && cp "$JAR" /tmp/st/mods/
+          curl -sSfL -o "/tmp/st/mods/fabric-api.jar" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/fabric-api-$API.jar"
+          curl -sSfL -o /tmp/st/server.jar "https://meta.fabricmc.net/v2/versions/loader/26.3/$LOADER/$INSTALLER/server/jar"
+          cd /tmp/st && echo eula=true > eula.txt && printf 'online-mode=false\n' > server.properties
+          { for i in $(seq 1 200); do grep -q 'Done (' logs/latest.log 2>/dev/null && break; sleep 2; done
+            sleep 3; echo sillytest; sleep 25
+            for m in school area51 kitchen bouncy supermarket moon pirate bathroom; do echo "map $m"; sleep 6; done
+            echo map; sleep 3; echo stop; sleep 20; } | timeout 900 java -Xmx3G -jar server.jar nogui > out.txt 2>&1 || true
+          grep -E 'Silly|SELFTEST|built map|Exception|Caused by|at com.iikka' out.txt | head -150
+          grep -q 'Done (' out.txt || { echo "SERVER DID NOT START"; tail -60 out.txt; exit 1; }
+          grep -q 'SELFTEST weapons' out.txt || { echo "SELFTEST DID NOT RUN"; tail -80 out.txt; exit 1; }
+          ! grep -q 'SELFTEST FAIL' out.txt || { echo "WEAPON FAILURES"; exit 1; }
+          [ "$(grep -c 'built map' out.txt)" -ge 9 ] || { echo "NOT ALL MAPS BUILT"; exit 1; }
+      - name: Make the zip
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          API=$(grep '^fabric_version=' gradle.properties | cut -d= -f2)
+          mkdir -p out && cp "$JAR" out/
+          curl -sSfL -o "out/fabric-api-$API.jar" "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$API/fabric-api-$API.jar"
+          (cd out && zip -q ../Silly-Weapon-Roulette-26.3.zip *.jar)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: silly-roulette
+          path: silly-mod/Silly-Weapon-Roulette-26.3.zip

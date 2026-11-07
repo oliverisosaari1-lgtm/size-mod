@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "sillyroulette",
+  "version": "${version}",
+  "name": "Silly Weapon Roulette",
+  "description": "Every 30 seconds you get a random silly weapon. 200 weapons, big arenas, /map to change the arena.",
+  "authors": ["Iikka"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.iikka.silly.SillyMod"] },
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~26.3", "java": ">=25", "fabric-api": "*" }
+}
