@@ -41,6 +41,9 @@ public class MoveMod implements ModInitializer {
 
     public static boolean isCrawling(UUID id) { return crawling.contains(id); }
 
+    /** Players who dashed or double jumped: no fall damage until they land. Value = ticks since. */
+    private static final Map<UUID, Integer> noFall = new HashMap<>();
+
     private static void bar(ServerPlayer p, String text) {
         p.displayClientMessage(Component.literal(text).withStyle(ChatFormatting.AQUA), true);
     }
@@ -68,6 +71,12 @@ public class MoveMod implements ModInitializer {
     }
 
     private static void tick(MinecraftServer server) {
+        noFall.entrySet().removeIf(en -> {
+            ServerPlayer p = server.getPlayerList().getPlayer(en.getKey());
+            if (p == null) return true;
+            en.setValue(en.getValue() + 1);
+            return en.getValue() > 5 && (p.onGround() || p.isInWater());
+        });
         for (Entity e : strays) if (!seats.containsKey(e)) e.discard();
         strays.clear();
         Iterator<Map.Entry<Entity, Seat>> it = seats.entrySet().iterator();
@@ -118,6 +127,7 @@ public class MoveMod implements ModInitializer {
             case Anim.FLIP, Anim.DASH -> {
                 if (p.isPassenger()) return;
                 p.resetFallDistance();
+                noFall.put(p.getUUID(), 0);
                 if (kind == Anim.FLIP) level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PHANTOM_FLAP, SoundSource.PLAYERS, 0.6f, 1.6f);
                 else level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.7f, 1.4f);
                 broadcast(p, kind);
@@ -139,6 +149,9 @@ public class MoveMod implements ModInitializer {
             d.register(Commands.literal("lay").executes(ctx -> seat(ctx.getSource().getPlayerOrException(), true)));
         });
         ServerTickEvents.END_SERVER_TICK.register(MoveMod::tick);
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
+            !(entity instanceof ServerPlayer p && noFall.containsKey(p.getUUID())
+                && source.is(net.minecraft.tags.DamageTypeTags.IS_FALL)));
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, srv) -> crawling.remove(h.player.getUUID()));
         // Old seats left in the world after a restart get cleaned up.
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
